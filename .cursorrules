@@ -1,0 +1,41 @@
+# Cursor Rules — FIFA Ticketing Hub 2026
+
+> Lis `CLAUDE.md` à la racine avant toute action. Toutes les décisions y sont figées.
+
+## Règles non négociables
+
+- Stack imposée : React+Vite+Tailwind (front), Node+Express (back), Cosmos DB (Mongo API), Upstash Redis, Stripe sandbox, Nodemailer, PDFKit, Azure (Static Web Apps, Container Apps, Blob, App Insights).
+- API REST versionnée sous `/api/v1/`.
+- Monolithe modulaire — pas de microservices, pas de message broker externe.
+- JWT en cookie `httpOnly` uniquement. Jamais `localStorage`.
+- OTP : 6 chiffres via email Nodemailer, expiration 10 min.
+- Verrou siège : Redis `SET NX EX 600` avec clé `seat:{seatId}`.
+- Cart : TTL Cosmos DB via index sur `expiresAt` (600s).
+- Paiement Stripe : flux PaymentIntent + webhook signé.
+- Génération billet après paiement : Order → Ticket → QR → PDF → Blob → email.
+
+## Interdictions
+
+- Ne JAMAIS modifier le dossier `/docs` (livrables enseignant).
+- Pas de PayPal, pas de SMS OTP, pas de Google OAuth.
+- Pas de Bootstrap / Material UI / Chakra UI.
+- Pas de couleurs hardcodées dans les composants (toujours les tokens CSS).
+- Pas de logique métier dans les routes Express (passer par `services/`).
+- Pas de `setTimeout` Node pour expirer les paniers (utiliser TTL Cosmos).
+- Pas de secret committé. `.env` jamais en clair dans le repo.
+
+## Conventions
+
+- Commits : Conventional Commits (`feat(scope): ...`).
+- Branches : `main`, `develop`, `feature/*`, `hotfix/*`.
+- Tests Jest obligatoires (cible >70% coverage) : cas nominal + erreur + limite.
+- Mobile-first, dark mode par défaut, switch via `data-theme` sur `<html>`.
+
+## Référentiels obligatoires
+
+- `CLAUDE.md` — Constitution
+- `agent/api-contracts.md` — Endpoints
+- `agent/data-models.md` — Schémas Mongoose
+- `agent/design-system.md` — Tokens / composants
+- `agent/architecture.md` — Architecture
+- `agent/tasks-sprint{1,2,3}.md` — Backlog sprints
