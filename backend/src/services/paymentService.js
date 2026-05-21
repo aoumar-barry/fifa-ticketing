@@ -159,16 +159,10 @@ async function processPaymentSuccess(paymentIntentId) {
     cart.status = 'confirmed';
     await cart.save();
 
-    // Finalize seat status and release redis locks
-    for (const item of cart.items) {
-      await Seat.findByIdAndUpdate(item.seatId, { status: 'sold' });
-      await unlockSeat(item.seatId.toString()).catch(() => {});
-    }
+    // Generate tickets and finalize seat status (unlocking Redis and marking as sold)
+    const ticketService = require('./ticketService');
+    await ticketService.createTicketsForOrder(order, cart.items);
   }
-
-  // NOTE: In TASK-016, we will integrate ticket generation here:
-  // const ticketService = require('./ticketService');
-  // await ticketService.createTicketsForOrder(order, cart.items);
 
   return order;
 }

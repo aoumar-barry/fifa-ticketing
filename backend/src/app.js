@@ -3,6 +3,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const pinoHttp = require('pino-http');
+const path = require('path');
 
 const { logger } = require('./utils/logger');
 const { mongoose } = require('./config/db');
@@ -17,6 +18,7 @@ function createApp({ frontendUrl } = {}) {
       credentials: true,
     }),
   );
+  app.use('/tickets', express.static(path.join(__dirname, '../public/tickets')));
   app.use('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
   app.use(express.json());
   app.use(cookieParser());

@@ -45,3 +45,5 @@ coverage/
 # Misc
 *.pem
 .eslintcache
+backend/public/tickets/*.pdf
+
