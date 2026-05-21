@@ -1,11 +1,34 @@
 require('dotenv').config();
 
+// Mock firebase-admin before any imports
+jest.mock('firebase-admin', () => {
+  const mockAuth = {
+    verifyIdToken: jest.fn(),
+  };
+  return {
+    credential: {
+      cert: jest.fn(),
+    },
+    initializeApp: jest.fn(),
+    auth: () => mockAuth,
+  };
+});
+
 // Ensure secrets are populated for the test run if they aren't in .env
 if (!process.env.JWT_ACCESS_SECRET) {
   process.env.JWT_ACCESS_SECRET = 'local_access_secret_key_fifa_2026_xyz';
 }
 if (!process.env.JWT_REFRESH_SECRET) {
   process.env.JWT_REFRESH_SECRET = 'local_refresh_secret_key_fifa_2026_abc';
+}
+if (!process.env.FIREBASE_PROJECT_ID) {
+  process.env.FIREBASE_PROJECT_ID = 'test-project';
+}
+if (!process.env.FIREBASE_CLIENT_EMAIL) {
+  process.env.FIREBASE_CLIENT_EMAIL = 'test-email@example.com';
+}
+if (!process.env.FIREBASE_PRIVATE_KEY) {
+  process.env.FIREBASE_PRIVATE_KEY = '-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQ...\n-----END PRIVATE KEY-----\n';
 }
 
 const request = require('supertest');
@@ -292,6 +315,136 @@ describe('Auth integration tests', () => {
       expect(refreshCookie).toBeDefined();
       // An expired cookie (Expires in the past) signifies clearCookie
       expect(refreshCookie).toContain('Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+    });
+  });
+
+  describe('POST /api/v1/auth/firebase', () => {
+    const admin = require('firebase-admin');
+    const mockVerifyIdToken = admin.auth().verifyIdToken;
+
+    beforeEach(() => {
+      mockVerifyIdToken.mockReset();
+    });
+
+    it('successfully registers and logs in a new Firebase user (TC-AUTH-003)', async () => {
+      mockVerifyIdToken.mockResolvedValueOnce({
+        uid: 'fb-new-123',
+        email: 'fb-new@example.com',
+        name: 'New Firebase User',
+      });
+
+      const res = await request(app)
+        .post('/api/v1/auth/firebase')
+        .set('Authorization', 'Bearer mock-valid-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('accessToken');
+      expect(res.body).toHaveProperty('user');
+      expect(res.body.user.email).toBe('fb-new@example.com');
+      expect(res.body.user.firebaseUid).toBe('fb-new-123');
+      expect(res.body.user.firstName).toBe('New');
+      expect(res.body.user.lastName).toBe('Firebase User');
+      expect(res.body.user.passwordHash).toBeUndefined();
+
+      const refreshToken = getRefreshTokenFromCookie(res);
+      expect(refreshToken).toBeDefined();
+      expect(refreshToken.length).toBeGreaterThan(0);
+
+      // Verify user created in DB
+      const dbUser = await User.findOne({ email: 'fb-new@example.com' });
+      expect(dbUser).toBeDefined();
+      expect(dbUser.firebaseUid).toBe('fb-new-123');
+      expect(dbUser.passwordHash).toBeUndefined();
+    });
+
+    it('successfully logs in an existing Firebase user', async () => {
+      // Create user in DB first
+      await User.create({
+        email: 'fb-exist@example.com',
+        firebaseUid: 'fb-exist-123',
+        firstName: 'Existing',
+        lastName: 'User',
+      });
+
+      mockVerifyIdToken.mockResolvedValueOnce({
+        uid: 'fb-exist-123',
+        email: 'fb-exist@example.com',
+        name: 'Existing User',
+      });
+
+      const res = await request(app)
+        .post('/api/v1/auth/firebase')
+        .set('Authorization', 'Bearer mock-valid-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.email).toBe('fb-exist@example.com');
+      expect(res.body.user.firebaseUid).toBe('fb-exist-123');
+
+      const refreshToken = getRefreshTokenFromCookie(res);
+      expect(refreshToken).toBeDefined();
+    });
+
+    it('links a Firebase login to an existing local account with the same email', async () => {
+      // Create local user with passwordHash
+      await User.create({
+        email: 'link-me@example.com',
+        passwordHash: 'hashedpassword123',
+        firstName: 'Local',
+        lastName: 'User',
+      });
+
+      mockVerifyIdToken.mockResolvedValueOnce({
+        uid: 'fb-link-123',
+        email: 'link-me@example.com',
+        name: 'Linked User',
+      });
+
+      const res = await request(app)
+        .post('/api/v1/auth/firebase')
+        .set('Authorization', 'Bearer mock-valid-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.email).toBe('link-me@example.com');
+      expect(res.body.user.firebaseUid).toBe('fb-link-123');
+
+      // Check DB directly
+      const dbUser = await User.findOne({ email: 'link-me@example.com' });
+      expect(dbUser).toBeDefined();
+      expect(dbUser.firebaseUid).toBe('fb-link-123');
+      expect(dbUser.passwordHash).toBe('hashedpassword123'); // Still has password hash
+    });
+
+    it('rejects authentication with missing or malformed Authorization header', async () => {
+      const resNoHeader = await request(app)
+        .post('/api/v1/auth/firebase');
+      expect(resNoHeader.status).toBe(401);
+      expect(resNoHeader.body.error).toMatchObject({
+        code: 'UNAUTHORIZED',
+        message: 'No Bearer token provided in Authorization header',
+      });
+
+      const resBadHeader = await request(app)
+        .post('/api/v1/auth/firebase')
+        .set('Authorization', 'Basic credentials');
+      expect(resBadHeader.status).toBe(401);
+      expect(resBadHeader.body.error).toMatchObject({
+        code: 'UNAUTHORIZED',
+        message: 'No Bearer token provided in Authorization header',
+      });
+    });
+
+    it('rejects authentication when Firebase verification fails', async () => {
+      mockVerifyIdToken.mockRejectedValueOnce(new Error('Firebase token expired'));
+
+      const res = await request(app)
+        .post('/api/v1/auth/firebase')
+        .set('Authorization', 'Bearer mock-expired-token');
+
+      expect(res.status).toBe(401);
+      expect(res.body.error).toMatchObject({
+        code: 'UNAUTHORIZED',
+        message: 'Firebase token expired',
+      });
     });
   });
 });

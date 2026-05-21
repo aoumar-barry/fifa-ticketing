@@ -92,9 +92,34 @@ async function logout(req, res, next) {
   }
 }
 
+async function loginFirebase(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new authService.AppError(401, 'No Bearer token provided in Authorization header', 'UNAUTHORIZED');
+    }
+
+    const idToken = authHeader.split('Bearer ')[1]?.trim();
+    if (!idToken) {
+      throw new authService.AppError(401, 'No token provided in Authorization header', 'UNAUTHORIZED');
+    }
+
+    const { user, accessToken, refreshToken } = await authService.loginOrRegisterFirebase(idToken);
+
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+    res.status(200).json({
+      user,
+      accessToken,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   registerLocal,
   loginLocal,
   refreshTokens,
   logout,
+  loginFirebase,
 };

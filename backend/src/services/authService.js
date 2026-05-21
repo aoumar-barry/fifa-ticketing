@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { User } = require('../models');
 const { loadEnv } = require('../config/env');
+const { verifyFirebaseToken } = require('../config/firebase');
 
 const env = loadEnv();
 const JWT_ACCESS_SECRET = env.JWT_ACCESS_SECRET;
@@ -120,10 +121,78 @@ async function refreshTokens(token) {
   }
 }
 
+async function loginOrRegisterFirebase(idToken) {
+  if (!idToken) {
+    throw new AppError(401, 'Firebase ID Token is required', 'UNAUTHORIZED');
+  }
+
+  try {
+    const decoded = await verifyFirebaseToken(idToken);
+    const { uid, email, name } = decoded;
+
+    if (!email) {
+      throw new AppError(400, 'Firebase user must have an email address', 'BAD_REQUEST');
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // 1. Check if user already exists by firebaseUid
+    let user = await User.findOne({ firebaseUid: uid });
+
+    if (!user) {
+      // 2. Check if a local user exists with the same email
+      user = await User.findOne({ email: normalizedEmail });
+
+      if (user) {
+        // Link the firebaseUid to the existing account
+        user.firebaseUid = uid;
+        await user.save();
+      } else {
+        // 3. Create a new user since they don't exist
+        const fullName = name || '';
+        const emailName = normalizedEmail.split('@')[0] || 'User';
+        let firstName = 'Firebase';
+        let lastName = 'User';
+
+        if (fullName) {
+          const parts = fullName.trim().split(/\s+/);
+          if (parts.length > 0) {
+            firstName = parts[0];
+            lastName = parts.slice(1).join(' ') || 'User';
+          }
+        } else if (emailName) {
+          firstName = emailName;
+        }
+
+        user = await User.create({
+          email: normalizedEmail,
+          firebaseUid: uid,
+          firstName,
+          lastName,
+          isVerified: true,
+          role: 'user',
+        });
+      }
+    }
+
+    const tokens = generateTokens(user);
+
+    return {
+      user,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw new AppError(401, err.message || 'Invalid Firebase ID Token', 'UNAUTHORIZED');
+  }
+}
+
 module.exports = {
   AppError,
   registerLocal,
   loginLocal,
   refreshTokens,
+  loginOrRegisterFirebase,
   generateTokens,
 };
