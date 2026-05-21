@@ -34,7 +34,7 @@ function createApp({ frontendUrl } = {}) {
   });
 
   // Les routes /api/v1/* seront branchées ici lors des prochaines tâches.
-  // app.use('/api/v1', require('./routes'));
+  app.use('/api/v1', require('./routes'));
 
   app.use((_req, res) => {
     res.status(404).json({
