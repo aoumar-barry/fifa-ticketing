@@ -19,7 +19,6 @@ const TicketSchema = new mongoose.Schema(
   { versionKey: false },
 );
 
-TicketSchema.index({ qrCode: 1 }, { unique: true });
 TicketSchema.index({ userId: 1 });
 TicketSchema.index({ orderId: 1 });
 

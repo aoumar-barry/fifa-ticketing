@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "lint": "eslint src",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "seed": "node src/scripts/seed.js"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.24.0",
