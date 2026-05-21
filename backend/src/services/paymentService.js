@@ -3,6 +3,12 @@ const { Order, Payment, Cart, Seat, Match } = require('../models');
 const { unlockSeat } = require('./seatLockService');
 const { AppError } = require('./authService');
 
+const isMockMode = process.env.NODE_ENV !== 'test' && (
+  !process.env.STRIPE_SECRET_KEY ||
+  process.env.STRIPE_SECRET_KEY.startsWith('mock') ||
+  process.env.STRIPE_SECRET_KEY === 'sk_test_...'
+);
+
 /**
  * Create a Stripe PaymentIntent for the active cart.
  *
@@ -31,17 +37,32 @@ async function createPaymentIntent(cartId, userId) {
 
   // Create Stripe PaymentIntent
   let paymentIntent;
-  try {
-    paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // convert to cents
+  if (isMockMode) {
+    const mockId = `pi_mock_${Math.random().toString(36).substring(2, 11)}`;
+    paymentIntent = {
+      id: mockId,
+      client_secret: `${mockId}_secret_${Math.random().toString(36).substring(2, 11)}`,
+      amount: Math.round(amount * 100),
       currency: 'usd',
+      status: 'requires_payment_method',
       metadata: {
         cartId: cartId.toString(),
         userId: userId.toString(),
       },
-    });
-  } catch (err) {
-    throw new AppError(500, `Erreur Stripe : ${err.message}`, 'STRIPE_ERROR');
+    };
+  } else {
+    try {
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // convert to cents
+        currency: 'usd',
+        metadata: {
+          cartId: cartId.toString(),
+          userId: userId.toString(),
+        },
+      });
+    } catch (err) {
+      throw new AppError(500, `Erreur Stripe : ${err.message}`, 'STRIPE_ERROR');
+    }
   }
 
   // Create Order in pending state
@@ -80,10 +101,19 @@ async function createPaymentIntent(cartId, userId) {
 async function confirmPayment(cartId, paymentIntentId, userId) {
   // Retrieve the payment intent from Stripe to verify status
   let paymentIntent;
-  try {
-    paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-  } catch (err) {
-    throw new AppError(500, `Erreur Stripe : ${err.message}`, 'STRIPE_ERROR');
+  if (isMockMode) {
+    paymentIntent = {
+      id: paymentIntentId,
+      status: 'succeeded',
+      amount: 15000,
+      currency: 'usd',
+    };
+  } else {
+    try {
+      paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    } catch (err) {
+      throw new AppError(500, `Erreur Stripe : ${err.message}`, 'STRIPE_ERROR');
+    }
   }
 
   if (paymentIntent.status !== 'succeeded') {

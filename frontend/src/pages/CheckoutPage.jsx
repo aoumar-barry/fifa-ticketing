@@ -43,10 +43,16 @@ function CheckoutForm({ clientSecret, amount }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Local state for mock card inputs when Stripe is bypassed
+  const isMockSecret = clientSecret && clientSecret.startsWith('pi_mock_');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvc, setCvc] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
+    if (!isMockSecret && (!stripe || !elements)) {
       return;
     }
 
@@ -59,34 +65,45 @@ function CheckoutForm({ clientSecret, amount }) {
     setErrorMessage('');
 
     try {
-      // 1. Confirm payment with Stripe
-      const cardElement = elements.getElement(CardElement);
-      const { paymentIntent, error } = await stripe.confirmCardPayment(
-        clientSecret,
-        {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              name: nameOnCard,
-            },
-          },
-        }
-      );
+      let paymentIntentId;
 
-      if (error) {
-        throw new Error(error.message || 'Le paiement a échoué.');
-      }
-
-      if (paymentIntent.status === 'succeeded') {
-        // 2. Confirm order in backend
-        const confirmRes = await confirmPayment(cart.cartId, paymentIntent.id);
-        
-        // 3. Clear cart store and redirect to Order Details Page
-        clearCart();
-        navigate(`/orders/${confirmRes.orderId}`);
+      if (isMockSecret) {
+        // Simulation of payment success in mock mode
+        console.log('[Mock Mode] Confirming payment locally...');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        paymentIntentId = clientSecret.split('_secret_')[0];
       } else {
-        throw new Error('Le paiement n\'a pas pu être validé.');
+        // 1. Confirm payment with Stripe
+        const cardElement = elements.getElement(CardElement);
+        const { paymentIntent, error } = await stripe.confirmCardPayment(
+          clientSecret,
+          {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                name: nameOnCard,
+              },
+            },
+          }
+        );
+
+        if (error) {
+          throw new Error(error.message || 'Le paiement a échoué.');
+        }
+
+        if (paymentIntent.status !== 'succeeded') {
+          throw new Error('Le paiement n\'a pas pu être validé.');
+        }
+
+        paymentIntentId = paymentIntent.id;
       }
+
+      // 2. Confirm order in backend
+      const confirmRes = await confirmPayment(cart.cartId, paymentIntentId);
+      
+      // 3. Clear cart store and redirect to Order Details Page
+      clearCart();
+      navigate(`/orders/${confirmRes.orderId}`);
     } catch (err) {
       console.error(err);
       setErrorMessage(err.message || 'Une erreur est survenue lors du paiement.');
@@ -119,38 +136,90 @@ function CheckoutForm({ clientSecret, amount }) {
         />
       </div>
 
-      {/* Stripe Card Element Wrapper */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-          Informations de paiement
-        </label>
-        <div className="p-3.5 bg-bg-tertiary border border-border-light rounded-md focus-within:border-brand-gold transition-all duration-150">
-          <CardElement
-            options={{
-              style: {
-                base: {
-                  color: '#FFFFFF',
-                  fontFamily: 'Inter, sans-serif',
-                  fontSmoothing: 'antialiased',
-                  fontSize: '14px',
-                  '::placeholder': {
-                    color: '#5A5A72',
+      {/* Stripe Card Element Wrapper or Mock fields */}
+      {isMockSecret ? (
+        <div className="space-y-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+              Informations de paiement (Mode Simulé)
+            </label>
+            <div className="p-3.5 bg-bg-tertiary border border-border-light rounded-md focus-within:border-brand-gold transition-all duration-150">
+              <input
+                type="text"
+                placeholder="4242 4242 4242 4242"
+                value={cardNumber}
+                onChange={(e) => setCardNumber(e.target.value)}
+                required
+                className="w-full bg-transparent text-sm text-text-primary focus:outline-none placeholder-text-muted"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                Date d&apos;expiration
+              </label>
+              <div className="p-3.5 bg-bg-tertiary border border-border-light rounded-md focus-within:border-brand-gold transition-all duration-150">
+                <input
+                  type="text"
+                  placeholder="MM/AA"
+                  value={expiry}
+                  onChange={(e) => setExpiry(e.target.value)}
+                  required
+                  className="w-full bg-transparent text-sm text-text-primary focus:outline-none placeholder-text-muted"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                Code CVC
+              </label>
+              <div className="p-3.5 bg-bg-tertiary border border-border-light rounded-md focus-within:border-brand-gold transition-all duration-150">
+                <input
+                  type="text"
+                  placeholder="123"
+                  value={cvc}
+                  onChange={(e) => setCvc(e.target.value)}
+                  required
+                  className="w-full bg-transparent text-sm text-text-primary focus:outline-none placeholder-text-muted"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+            Informations de paiement
+          </label>
+          <div className="p-3.5 bg-bg-tertiary border border-border-light rounded-md focus-within:border-brand-gold transition-all duration-150">
+            <CardElement
+              options={{
+                style: {
+                  base: {
+                    color: '#FFFFFF',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSmoothing: 'antialiased',
+                    fontSize: '14px',
+                    '::placeholder': {
+                      color: '#5A5A72',
+                    },
+                  },
+                  invalid: {
+                    color: '#FF4D4D',
+                    iconColor: '#FF4D4D',
                   },
                 },
-                invalid: {
-                  color: '#FF4D4D',
-                  iconColor: '#FF4D4D',
-                },
-              },
-            }}
-          />
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={isProcessing || !stripe}
+        disabled={isProcessing || (!isMockSecret && !stripe)}
         className="w-full bg-brand-gold hover:bg-brand-gold-dark disabled:bg-bg-elevated disabled:text-text-muted text-black font-bold py-3 rounded-lg transition-colors uppercase tracking-wider text-sm shadow-glow flex justify-center items-center gap-2"
       >
         {isProcessing ? (
