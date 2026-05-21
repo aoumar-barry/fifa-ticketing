@@ -1,6 +1,6 @@
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
-const { seed, STADIAMS_DATA } = require('../../scripts/seed');
+const { seed, STADIUMS_DATA } = require('../../scripts/seed');
 const { User, Stadium, Match, Seat } = require('../../models');
 const bcrypt = require('bcrypt');
 
@@ -47,8 +47,8 @@ describe('scripts/seed.js — database seeding', () => {
     // Vérifier les Stades
     const stadiums = await Stadium.find({});
     expect(stadiums).toHaveLength(16);
-    expect(stadiums[0].name).toBe(STADIAMS_DATA[0].name);
-    expect(stadiums[0].capacity).toBe(STADIAMS_DATA[0].capacity);
+    expect(stadiums[0].name).toBe(STADIUMS_DATA[0].name);
+    expect(stadiums[0].capacity).toBe(STADIUMS_DATA[0].capacity);
 
     // Vérifier les Matchs
     const matches = await Match.find({});

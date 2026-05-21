@@ -7,7 +7,7 @@ const StadiumSchema = new mongoose.Schema(
     country: { type: String, required: true, trim: true },
     capacity: { type: Number, required: true, min: 1 },
   },
-  { versionKey: false },
+  { versionKey: false, collection: 'stadiums' },
 );
 
 StadiumSchema.index({ city: 1 });

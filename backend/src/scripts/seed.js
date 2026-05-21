@@ -5,7 +5,7 @@ const { User, Stadium, Match, Seat } = require('../models');
 const bcrypt = require('bcrypt');
 const { logger } = require('../utils/logger');
 
-const STADIAMS_DATA = [
+const STADIUMS_DATA = [
   { name: 'Mercedes-Benz Stadium', city: 'Atlanta', country: 'USA', capacity: 71000 },
   { name: 'Gillette Stadium', city: 'Boston', country: 'USA', capacity: 65878 },
   { name: 'AT&T Stadium', city: 'Dallas', country: 'USA', capacity: 80000 },
@@ -116,7 +116,7 @@ async function seed(options = {}) {
 
     // 2. Insert Stadiums
     logger.info('[seed] Inserting stadiums...');
-    const createdStadiums = await Stadium.insertMany(STADIAMS_DATA);
+    const createdStadiums = await Stadium.insertMany(STADIUMS_DATA);
     logger.info(`[seed] Created ${createdStadiums.length} stadiums`);
 
     // Dictionnaire pour retrouver les stades par nom
@@ -242,4 +242,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { seed, STADIAMS_DATA, MATCHES_DATA };
+module.exports = { seed, STADIUMS_DATA, MATCHES_DATA };
