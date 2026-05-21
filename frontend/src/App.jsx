@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import CataloguePage from './pages/CataloguePage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -23,7 +24,7 @@ function ProtectedRoute({ children }) {
 }
 
 export default function App() {
-  const { checkAuth, logout, user, isLoading } = useAuthStore();
+  const { checkAuth, user, isLoading } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
@@ -49,25 +50,7 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <main className="min-h-screen flex flex-col items-center justify-center bg-bg-primary text-text-primary px-6">
-                <div className="text-center max-w-xl">
-                  <p className="text-brand-gold font-mono text-sm tracking-widest uppercase mb-3">
-                    FIFA Ticketing Hub 2026
-                  </p>
-                  <h1 className="text-4xl sm:text-6xl font-black leading-tight mb-4">
-                    Catalogue Matchs
-                  </h1>
-                  <p className="text-text-secondary mb-6">
-                    Bienvenue, <span className="font-bold text-text-primary">{user?.email}</span> !
-                  </p>
-                  <button
-                    onClick={logout}
-                    className="px-6 py-2 bg-bg-tertiary hover:bg-bg-elevated border border-border-light rounded-full text-sm font-medium transition-all duration-150 active:scale-95"
-                  >
-                    Se déconnecter
-                  </button>
-                </div>
-              </main>
+              <CataloguePage />
             </ProtectedRoute>
           }
         />
@@ -76,4 +59,5 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
 
