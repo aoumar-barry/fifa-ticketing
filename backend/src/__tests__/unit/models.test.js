@@ -41,39 +41,77 @@ const objectId = () => new mongoose.Types.ObjectId();
 // User
 // ---------------------------------------------------------------------------
 describe('User model', () => {
-  const validUser = () => ({
+  const validLocalUser = () => ({
     email: 'JOHN@TEST.com',
-    passwordHash: 'hash',
+    passwordHash: 'hashedpwd123',
     firstName: 'John',
     lastName: 'Doe',
   });
 
-  it('creates a user and lowercases email', async () => {
-    const u = await User.create(validUser());
-    expect(u.email).toBe('john@test.com');
-    expect(u.role).toBe('user');
-    expect(u.isVerified).toBe(false);
+  const validFirebaseUser = () => ({
+    email: 'firebase@test.com',
+    firebaseUid: 'uid-123',
+    firstName: 'Firebase',
+    lastName: 'User',
   });
 
-  it('rejects missing required fields', async () => {
-    await expect(User.create({ email: 'a@b.c' })).rejects.toThrow();
+  it('creates a local user, lowercases email and excludes passwordHash from toJSON', async () => {
+    const u = await User.create(validLocalUser());
+    expect(u.email).toBe('john@test.com');
+    expect(u.role).toBe('user');
+    expect(u.isVerified).toBe(true);
+    expect(u.passwordHash).toBe('hashedpwd123');
+
+    const json = u.toJSON();
+    expect(json.passwordHash).toBeUndefined();
+    expect(json.email).toBe('john@test.com');
+  });
+
+  it('creates a firebase user successfully', async () => {
+    const u = await User.create(validFirebaseUser());
+    expect(u.email).toBe('firebase@test.com');
+    expect(u.firebaseUid).toBe('uid-123');
+    expect(u.isVerified).toBe(true);
+  });
+
+  it('allows multiple local users without firebaseUid (sparse index test)', async () => {
+    const u1 = await User.create(validLocalUser());
+    const secondLocal = {
+      email: 'jane@test.com',
+      passwordHash: 'anotherhash',
+      firstName: 'Jane',
+      lastName: 'Doe',
+    };
+    const u2 = await User.create(secondLocal);
+    expect(u1.email).toBe('john@test.com');
+    expect(u2.email).toBe('jane@test.com');
+    expect(u1.firebaseUid).toBeUndefined();
+    expect(u2.firebaseUid).toBeUndefined();
+  });
+
+  it('rejects missing required fields (like firstName)', async () => {
+    await expect(User.create({ email: 'a@b.c', lastName: 'Doe' })).rejects.toThrow();
   });
 
   it('enforces email uniqueness', async () => {
-    await User.create(validUser());
-    await expect(User.create(validUser())).rejects.toThrow(/duplicate key/i);
+    await User.create(validLocalUser());
+    await expect(User.create(validLocalUser())).rejects.toThrow(/duplicate key/i);
+  });
+
+  it('enforces firebaseUid uniqueness', async () => {
+    await User.create(validFirebaseUser());
+    const secondUser = {
+      email: 'another@test.com',
+      firebaseUid: 'uid-123',
+      firstName: 'Jane',
+      lastName: 'Doe',
+    };
+    await expect(User.create(secondUser)).rejects.toThrow(/duplicate key/i);
   });
 
   it('rejects invalid role enum', async () => {
-    const u = new User({ ...validUser(), role: 'superadmin' });
+    const u = new User({ ...validLocalUser(), role: 'superadmin' });
     await expect(u.validate()).rejects.toThrow();
-  });
-
-  it('hides sensitive fields in toJSON', async () => {
-    const u = await User.create({ ...validUser(), otpCode: '123456' });
-    const json = u.toJSON();
-    expect(json.passwordHash).toBeUndefined();
-    expect(json.otpCode).toBeUndefined();
   });
 });
 

@@ -12,19 +12,18 @@
 
 ```javascript
 {
-  email:        { type: String,  required: true, unique: true, lowercase: true, trim: true },
-  passwordHash: { type: String,  required: true },
-  firstName:    { type: String,  required: true },
-  lastName:     { type: String,  required: true },
-  phone:        { type: String },
-  otpCode:      { type: String },
-  otpExpiresAt: { type: Date },
-  isVerified:   { type: Boolean, default: false },
-  role:         { type: String,  enum: ['user', 'admin'], default: 'user' },
-  createdAt:    { type: Date,    default: Date.now }
+  email:         { type: String,  required: true, unique: true, lowercase: true, trim: true },
+  passwordHash:  { type: String }, // optionnel (requis si pas de firebaseUid)
+  firebaseUid:   { type: String,  unique: true, sparse: true, trim: true }, // optionnel (requis si pas de passwordHash)
+  firstName:     { type: String,  required: true },
+  lastName:      { type: String,  required: true },
+  phone:         { type: String },
+  isVerified:    { type: Boolean, default: true },
+  role:          { type: String,  enum: ['user', 'admin'], default: 'user' },
+  createdAt:     { type: Date,    default: Date.now }
 }
 ```
-Index : `{ email: 1 }` unique.
+Indexes : `{ email: 1 }` unique, `{ firebaseUid: 1 }` unique (sparse).
 
 ---
 

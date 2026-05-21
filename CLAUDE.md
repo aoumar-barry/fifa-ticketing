@@ -20,12 +20,12 @@ L'application doit être **déployée et fonctionnelle** en production.
 | Backend | Node.js + Express | API REST versionnée /api/v1/ |
 | Base de données | Azure Cosmos DB (API MongoDB) | Compatible Mongoose |
 | Cache / Lock | Upstash Redis | Verrou sièges + sessions |
-| Auth | JWT + bcrypt + OTP email | Pas de SMS, pas de Google OAuth |
+| Auth | Hybride (Local JWT + Firebase OAuth) | Session sécurisée via cookie httpOnly refreshToken et JWT d'accès en mémoire |
 | Paiement | Stripe (sandbox uniquement) | Pas de PayPal |
 | Déploiement Frontend | Azure Static Web Apps | CDN intégré, CI/CD GitHub natif |
 | Déploiement Backend | Azure Container Apps | Containerisé, auto-scaling |
 | Monitoring | Azure Application Insights | Observabilité production |
-| Email | Nodemailer | OTP + confirmation + billet PDF |
+| Email | Nodemailer | Confirmation + billet PDF (pas d'OTP par email) |
 | PDF | PDFKit | Génération billet téléchargeable |
 | QR Code | npm qrcode | Identifiant unique par billet |
 | Stockage fichiers | Azure Blob Storage | PDFs des billets |
@@ -125,14 +125,10 @@ if (!locked) throw new AppError(409, 'Siège déjà réservé');
 - Durée : **600 secondes (10 minutes) exactement**
 - Libération du verrou Redis si panier annulé manuellement
 
-### 3.3 Authentification 2FA
-- OTP : **6 chiffres**, généré avec `crypto.randomInt(100000, 999999)`
-- Expiration : **10 minutes** (`otpExpiresAt = Date.now() + 600000`)
-- Envoi : **email uniquement** via Nodemailer
-- Flux : login → tempToken (5min) → verify-otp → accessToken + refreshToken
-- JWT access token : **15 minutes**
-- JWT refresh token : **7 jours**
-- Stockage JWT : **httpOnly cookie** (jamais localStorage)
+### 3.3 Authentification Hybride (Local JWT & Firebase OAuth)
+- **Authentification locale** : Saisie email/mot de passe → Inscription (`POST /auth/register`) ou Connexion (`POST /auth/login`) → Retourne un Access Token JWT (15 min) et un Refresh Token (7 jours) dans un cookie `refreshToken` httpOnly.
+- **Authentification Firebase OAuth** : Fournisseurs **Google & GitHub** uniquement → Authentification via le SDK Firebase (frontend) → Envoi du Firebase ID Token au backend (`POST /auth/firebase`) → Validation via `firebase-admin` → Création/synchronisation de l'utilisateur en base → Retourne le même Access Token JWT (15 min) et le même Refresh Token (7 jours) dans un cookie `refreshToken` httpOnly.
+- **Stockage Session** : Cookie `refreshToken` **httpOnly** (jamais de jetons d'accès ou d'ID dans localStorage). Access Token JWT stocké en mémoire côté frontend.
 
 ### 3.4 Paiement Stripe
 - Mode **sandbox uniquement** (clés test `sk_test_...`)
@@ -158,11 +154,11 @@ if (!locked) throw new AppError(409, 'Siège déjà réservé');
 
 ### Auth
 ```
-POST /api/v1/auth/register     body: {email, password, firstName, lastName, phone}
-POST /api/v1/auth/login        body: {email, password} → {tempToken}
-POST /api/v1/auth/verify-otp   body: {tempToken, code} → {accessToken} + cookie refreshToken
-POST /api/v1/auth/refresh      cookie: refreshToken → {accessToken}
-POST /api/v1/auth/logout       → clear cookies
+POST   /api/v1/auth/register    body: {email, password, firstName, lastName, phone} → {user, accessToken} + cookie refreshToken
+POST   /api/v1/auth/login       body: {email, password} → {user, accessToken} + cookie refreshToken
+POST   /api/v1/auth/firebase    header: Authorization: Bearer <idToken> → {user, accessToken} + cookie refreshToken
+POST   /api/v1/auth/refresh     cookie: refreshToken → {accessToken} + cookie refreshToken (rotation)
+POST   /api/v1/auth/logout      → clear cookies
 ```
 
 ### Matches
@@ -215,14 +211,13 @@ GET    /api/v1/admin/export         → CSV des ventes
 ```javascript
 // User
 {
-  email:         { type: String, required: true, unique: true, lowercase: true },
-  passwordHash:  { type: String, required: true },
+  email:         { type: String, required: true, unique: true, lowercase: true, trim: true },
+  passwordHash:  { type: String }, // optionnel (requis si pas de firebaseUid)
+  firebaseUid:   { type: String, unique: true, sparse: true, trim: true }, // optionnel (requis si pas de passwordHash)
   firstName:     { type: String, required: true },
   lastName:      { type: String, required: true },
   phone:         { type: String },
-  otpCode:       { type: String },
-  otpExpiresAt:  { type: Date },
-  isVerified:    { type: Boolean, default: false },
+  isVerified:    { type: Boolean, default: true },
   role:          { type: String, enum: ['user', 'admin'], default: 'user' },
   createdAt:     { type: Date, default: Date.now }
 }
@@ -441,7 +436,7 @@ Dashboard admin   → Vercel dashboard
 
 ### Commits (Conventional Commits — obligatoire)
 ```
-feat(auth): add OTP email verification endpoint
+feat(auth): integrate Firebase OAuth login and session
 fix(cart): release Redis lock on cart expiration
 feat(payment): integrate Stripe webhook handler
 test(ticket): add unit tests for QR generation
@@ -457,7 +452,7 @@ fix(seat): handle concurrent lock race condition
 ```
 main        ← production uniquement, protégée
 develop     ← intégration, base des features
-feature/*   ← ex: feature/auth-otp
+feature/*   ← ex: feature/auth-firebase
 hotfix/*    ← ex: hotfix/cart-redis-leak
 ```
 
@@ -471,9 +466,14 @@ COSMOS_DB_NAME=fifa-ticketing
 UPSTASH_REDIS_URL=
 UPSTASH_REDIS_TOKEN=
 
-# JWT
+# JWT Secrets
 JWT_ACCESS_SECRET=
 JWT_REFRESH_SECRET=
+
+# Firebase Admin
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
 
 # Stripe
 STRIPE_SECRET_KEY=sk_test_...
@@ -512,7 +512,8 @@ FRONTEND_URL=http://localhost:5173
 ❌ Exposer variables .env côté frontend
 ❌ Committer des clés API dans le code
 ❌ Utiliser PayPal (retiré du périmètre)
-❌ Envoyer OTP par SMS (email uniquement)
+❌ Utiliser un autre système d'auth que local (JWT) et Firebase OAuth
+❌ Utiliser des cookies session Firebase (géré par notre propre JWT désormais)
 ❌ Utiliser setTimeout Node.js pour expirer les paniers
 ❌ Mettre de la logique métier dans les routes Express
 ❌ Créer des microservices séparés (monolithe modulaire uniquement)

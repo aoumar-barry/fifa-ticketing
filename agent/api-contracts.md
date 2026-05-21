@@ -11,32 +11,77 @@
 ### `POST /auth/register`
 **Body**
 ```json
-{ "email": "string", "password": "string (min 8)", "firstName": "string", "lastName": "string", "phone": "string (optional)" }
+{
+  "email": "john@test.com",
+  "password": "securepassword",
+  "firstName": "John",
+  "lastName": "Doe",
+  "phone": "+33612345678"
+}
 ```
-**Réponse 201** `{ "userId": "string", "message": "Vérifiez votre email" }`
-**Erreurs** : 400 (validation), 409 (email déjà utilisé)
+
+**Réponse 201**
+```json
+{
+  "user": { "id": "...", "email": "john@test.com", "firstName": "John", "lastName": "Doe", "role": "user" },
+  "accessToken": "ey..."
+}
+```
+Set-Cookie: `refreshToken=ey...; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth; Max-Age=604800` (Refresh Token JWT valide pour 7 jours)
+
+**Erreurs** : 400 (champs requis manquants), 409 (email déjà existant)
 
 ### `POST /auth/login`
-**Body** `{ "email": "string", "password": "string" }`
-**Réponse 200** `{ "tempToken": "string (jwt 5min)", "message": "OTP envoyé par email" }`
-**Erreurs** : 400, 401, 429 (rate limit)
+**Body**
+```json
+{
+  "email": "john@test.com",
+  "password": "securepassword"
+}
+```
 
-### `POST /auth/verify-otp`
-**Body** `{ "tempToken": "string", "code": "string (6 digits)" }`
 **Réponse 200**
 ```json
-{ "accessToken": "string (jwt 15min)", "user": { "id": "...", "email": "...", "firstName": "...", "role": "user" } }
+{
+  "user": { "id": "...", "email": "john@test.com", "firstName": "John", "lastName": "Doe", "role": "user" },
+  "accessToken": "ey..."
+}
 ```
-Set-Cookie: `refreshToken=...; HttpOnly; Secure; SameSite=Strict; Max-Age=604800`
-**Erreurs** : 400, 401 (code expiré ou invalide)
+Set-Cookie: `refreshToken=ey...; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth; Max-Age=604800` (Refresh Token JWT valide pour 7 jours)
+
+**Erreurs** : 400 (email/password requis), 401 (identifiants incorrects)
+
+### `POST /auth/firebase`
+**Headers**
+`Authorization: Bearer <idToken>` (Token d'ID Firebase obtenu après authentification Google/GitHub sur le client)
+
+**Réponse 200** (ou 201 si création)
+```json
+{
+  "user": { "id": "...", "email": "john@test.com", "firstName": "John", "lastName": "Doe", "role": "user" },
+  "accessToken": "ey..."
+}
+```
+Set-Cookie: `refreshToken=ey...; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth; Max-Age=604800` (Refresh Token JWT local valide pour 7 jours)
+
+**Erreurs** : 400 (token manquant), 401 (token Firebase invalide ou expiré)
 
 ### `POST /auth/refresh`
-Cookie requis : `refreshToken`
-**Réponse 200** `{ "accessToken": "string" }`
-**Erreurs** : 401 (refresh invalide ou expiré)
+**Cookies**
+`refreshToken=<token>`
+
+**Réponse 200**
+```json
+{
+  "accessToken": "ey..."
+}
+```
+Set-Cookie: `refreshToken=ey...; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth; Max-Age=604800` (Nouveau Refresh Token local)
+
+**Erreurs** : 401 (refresh token invalide, expiré ou manquant)
 
 ### `POST /auth/logout`
-**Réponse 204** + clear cookies
+**Réponse 204** + clear cookie `refreshToken`
 
 ---
 
@@ -170,8 +215,11 @@ Query : `?round=group|round16|...&date=YYYY-MM-DD&stadiumId=...`
 
 | Endpoint | Header requis | Cookie requis |
 |---|---|---|
-| `/auth/register`, `/auth/login`, `/auth/verify-otp` | — | — |
+| `/auth/register` | — | — |
+| `/auth/login` | — | — |
+| `/auth/firebase` | `Authorization: Bearer <idToken>` | — |
 | `/auth/refresh` | — | `refreshToken` |
-| Toute autre route auth | `Authorization: Bearer <accessToken>` | (optionnel) |
-| Routes admin | `Authorization: Bearer <accessToken>` (role=admin) | — |
+| `/auth/logout` | — | — |
+| Toute autre route protégée | `Authorization: Bearer <accessToken>` | — |
+| Routes admin | `Authorization: Bearer <accessToken>` | — (role=admin requis) |
 | Stripe webhook | `Stripe-Signature` | — |

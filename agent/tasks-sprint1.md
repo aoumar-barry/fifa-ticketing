@@ -86,184 +86,107 @@ feat(seed): add FIFA 2026 matches, stadiums and seats seed script
 
 ---
 
-## TASK-004 — Auth Register
+## TASK-004 — Inscription et Connexion locales (JWT)
 **Status:** TODO
 **Priorité:** CRITIQUE
 **MoSCoW:** MUST HAVE — US-01
 **Dépend de:** TASK-002
 
 ### Ce que l'agent doit faire
-- Créer backend/src/services/authService.js → register()
-- Créer backend/src/controllers/authController.js → register()
-- Créer backend/src/routes/authRoutes.js → POST /api/v1/auth/register
-- Hash password avec bcrypt (saltRounds: 12)
-- Envoyer email de bienvenue via Nodemailer
-- Valider les inputs avec express-validator
+- Créer backend/src/services/authService.js
+  - registerLocal() : Hacher le mot de passe avec bcrypt, enregistrer l'utilisateur avec `isVerified = true` par défaut, et générer les jetons (Access Token 15m, Refresh Token 7j).
+  - loginLocal() : Valider les identifiants locaux, vérifier le mot de passe avec bcrypt, et générer les mêmes jetons JWT.
+- Créer backend/src/controllers/authController.js → registerLocal(), loginLocal(), refreshTokens(), logout()
+- Créer backend/src/routes/authRoutes.js
+  - `POST /api/v1/auth/register` (body: email, password, firstName, lastName, phone)
+  - `POST /api/v1/auth/login` (body: email, password)
+  - `POST /api/v1/auth/refresh` (cookie: refreshToken)
+  - `POST /api/v1/auth/logout`
 
 ### Cas de test (format TP)
 
 **ID:** TC-AUTH-001
-**Fonctionnalité:** Inscription utilisateur
-**Préconditions:** Aucun compte existant avec cet email
+**Fonctionnalité:** Inscription locale directe
+**Préconditions:** Email non utilisé en base
 **Étapes:**
-1. POST /api/v1/auth/register avec {email, password, firstName, lastName, phone}
-2. Vérifier création User en base
-3. Vérifier email de bienvenue envoyé
-**Résultat attendu:** 201 + {message: "Compte créé"}
-**Résultat obtenu (simulé):** ✅ 201
+1. POST /api/v1/auth/register avec données valides (email, password, etc.)
+2. Vérifier création User en base avec son `passwordHash` haché
+3. Vérifier que la réponse retourne le `accessToken`
+4. Vérifier que le cookie `refreshToken` httpOnly est positionné
+**Résultat attendu:** 201 + {user, accessToken} + Cookie refreshToken
 
 **ID:** TC-AUTH-002
-**Fonctionnalité:** Inscription — email déjà utilisé
-**Préconditions:** Compte existant avec test@test.com
+**Fonctionnalité:** Connexion locale directe
+**Préconditions:** Utilisateur enregistré en base avec mot de passe
 **Étapes:**
-1. POST /api/v1/auth/register avec email déjà pris
-**Résultat attendu:** 409 + {error: "Email déjà utilisé"}
-**Résultat obtenu (simulé):** ✅ 409
-
-**ID:** TC-AUTH-003
-**Fonctionnalité:** Inscription — données manquantes
-**Préconditions:** Aucune
-**Étapes:**
-1. POST /api/v1/auth/register sans le champ password
-**Résultat attendu:** 422 + erreurs de validation
-**Résultat obtenu (simulé):** ✅ 422
-
-### Commit message
-```
-feat(auth): add register endpoint with bcrypt hashing and welcome email
-```
+1. POST /api/v1/auth/login avec email et mot de passe valides
+2. Vérifier que la réponse contient l'accessToken
+3. Vérifier que le cookie `refreshToken` httpOnly est positionné
+**Résultat attendu:** 200 + {user, accessToken} + Cookie refreshToken
 
 ---
 
-## TASK-005 — Auth Login + génération OTP
+## TASK-005 — Connexion et Synchronisation Firebase OAuth
 **Status:** TODO
 **Priorité:** CRITIQUE
 **MoSCoW:** MUST HAVE — US-01
 **Dépend de:** TASK-004
-**Réf:** CLAUDE.md section 3.3
 
 ### Ce que l'agent doit faire
-- authService.js → login()
-  - Vérifier email + bcrypt password
-  - Générer OTP 6 chiffres via crypto.randomInt(100000, 999999)
-  - Sauvegarder otpCode + otpExpiresAt (now + 10min) dans User
-  - Envoyer email OTP via Nodemailer
-  - Retourner tempToken JWT signé 5min
-- POST /api/v1/auth/login
+- Mettre à jour backend/src/services/authService.js
+  - loginOrRegisterFirebase() : Valider le Firebase ID token via `firebase-admin`, chercher l'utilisateur par `firebaseUid`, le créer s'il n'existe pas (sync auto), puis générer les jetons JWT locaux (Access Token et Refresh Token).
+- Ajouter au contrôleur backend/src/controllers/authController.js → loginFirebase()
+- Ajouter à backend/src/routes/authRoutes.js → `POST /api/v1/auth/firebase` (header: Authorization: Bearer <idToken>)
 
 ### Cas de test (format TP)
 
-**ID:** TC-AUTH-004
-**Fonctionnalité:** Connexion — cas nominal (fonctionnalité critique 1/3)
-**Préconditions:** Utilisateur inscrit et vérifié en base
+**ID:** TC-AUTH-003
+**Fonctionnalité:** Connexion Firebase avec synchronisation (nouvel utilisateur)
+**Préconditions:** ID token Firebase valide fourni
 **Étapes:**
-1. POST /api/v1/auth/login avec {email, password} corrects
-2. Vérifier que otpCode est sauvegardé en base
-3. Vérifier que email OTP est envoyé
-**Résultat attendu:** 200 + {tempToken}
-**Résultat obtenu (simulé):** ✅ 200 + tempToken
-
-**ID:** TC-AUTH-005
-**Fonctionnalité:** Connexion — mauvais mot de passe
-**Préconditions:** Utilisateur inscrit
-**Étapes:**
-1. POST /api/v1/auth/login avec mauvais password
-**Résultat attendu:** 401 + {error: "Identifiants invalides"}
-**Résultat obtenu (simulé):** ✅ 401
-
-**ID:** TC-AUTH-006
-**Fonctionnalité:** Connexion — email inexistant
-**Préconditions:** Aucune
-**Étapes:**
-1. POST /api/v1/auth/login avec email inexistant
-**Résultat attendu:** 401 (même message — sécurité)
-**Résultat obtenu (simulé):** ✅ 401
-
-### Commit message
-```
-feat(auth): add login endpoint with OTP generation and email delivery
-```
+1. POST /api/v1/auth/firebase avec token valide d'un utilisateur inexistant en base
+2. Vérifier la création de l'utilisateur avec son `firebaseUid` et sans `passwordHash`
+3. Vérifier que l'accessToken et le cookie `refreshToken` httpOnly sont retournés
+**Résultat attendu:** 200/201 + {user, accessToken} + Cookie refreshToken
 
 ---
 
-## TASK-006 — Auth Verify OTP
+## TASK-006 — Middlewares JWT local & Autorisations
 **Status:** TODO
 **Priorité:** CRITIQUE
 **MoSCoW:** MUST HAVE — US-01
-**Dépend de:** TASK-005
-**Réf:** CLAUDE.md section 3.3
-
-### Ce que l'agent doit faire
-- authService.js → verifyOTP()
-  - Vérifier tempToken JWT
-  - Vérifier otpCode + otpExpiresAt
-  - Générer accessToken (15min) + refreshToken (7 jours)
-  - Stocker refreshToken en httpOnly cookie
-  - Nettoyer otpCode + otpExpiresAt en base
-- POST /api/v1/auth/verify-otp
-
-### Cas de test (format TP)
-
-**ID:** TC-AUTH-007
-**Fonctionnalité:** Vérification OTP — cas nominal (fonctionnalité critique 1/3)
-**Préconditions:** Login effectué, tempToken valide, OTP reçu
-**Étapes:**
-1. POST /api/v1/auth/verify-otp avec {tempToken, code} corrects
-2. Vérifier accessToken dans réponse
-3. Vérifier refreshToken dans httpOnly cookie
-4. Vérifier otpCode supprimé en base
-**Résultat attendu:** 200 + {accessToken} + cookie refreshToken
-**Résultat obtenu (simulé):** ✅ 200
-
-**ID:** TC-AUTH-008
-**Fonctionnalité:** Vérification OTP — code expiré
-**Préconditions:** OTP généré il y a plus de 10 minutes
-**Étapes:**
-1. POST /api/v1/auth/verify-otp avec code expiré
-**Résultat attendu:** 401 + {error: "Code OTP expiré"}
-**Résultat obtenu (simulé):** ✅ 401
-
-**ID:** TC-AUTH-009
-**Fonctionnalité:** Vérification OTP — mauvais code
-**Préconditions:** Login effectué, tempToken valide
-**Étapes:**
-1. POST /api/v1/auth/verify-otp avec mauvais code
-**Résultat attendu:** 401 + {error: "Code OTP invalide"}
-**Résultat obtenu (simulé):** ✅ 401
-
-### Commit message
-```
-feat(auth): add OTP verification with JWT access and refresh token generation
-```
-
----
-
-## TASK-007 — Middleware Auth JWT
-**Status:** TODO
-**Priorité:** CRITIQUE
-**MoSCoW:** MUST HAVE — US-01
-**Dépend de:** TASK-006
+**Dépend de:** TASK-004
 
 ### Ce que l'agent doit faire
 - Créer backend/src/middlewares/authMiddleware.js
-  - Vérifier accessToken dans Authorization header
-  - Attacher user au req.user
-  - Gérer token expiré → 401
+  - Valider l'Access Token JWT extrait du header `Authorization: Bearer <token>`
+  - Récupérer l'utilisateur correspondant dans MongoDB et l'attacher à `req.user`
+  - Gérer les jetons expirés ou invalides (réponse 401)
 - Créer backend/src/middlewares/adminMiddleware.js
-  - Vérifier req.user.role === 'admin'
-- POST /api/v1/auth/refresh → nouveau accessToken
-- POST /api/v1/auth/logout → clear cookies
+  - Valider que `req.user.role === 'admin'` (réponse 403 sinon)
 
 ### Tests unitaires
 - Token valide → req.user attaché
 - Token expiré → 401
 - Token absent → 401
-- Role user sur route admin → 403
+- Rôle user sur route admin → 403
 
-### Commit message
-```
-feat(auth): add JWT middleware with refresh token rotation and logout
-```
+---
+
+## TASK-007 — Configuration SDK Firebase Client
+**Status:** TODO
+**Priorité:** HAUTE
+**MoSCoW:** MUST HAVE — US-01
+**Dépend de:** TASK-001
+
+### Ce que l'agent doit faire
+- Installer `firebase` sur le frontend
+- Créer `frontend/src/config/firebase.js` pour initialiser le SDK
+- Configurer les providers Google Auth et GitHub Auth
+- Créer les fonctions utilitaires pour appeler la popup Firebase et récupérer l'ID Token
+
+### Tests
+- Mocker Firebase Auth pour valider le comportement du service client
 
 ---
 
@@ -271,7 +194,7 @@ feat(auth): add JWT middleware with refresh token rotation and logout
 **Status:** TODO
 **Priorité:** HAUTE
 **MoSCoW:** MUST HAVE — US-02
-**Dépend de:** TASK-003, TASK-007
+**Dépend de:** TASK-003
 
 ### Ce que l'agent doit faire
 - Créer backend/src/services/matchService.js
@@ -286,68 +209,46 @@ feat(auth): add JWT middleware with refresh token rotation and logout
 - GET /matches/:id retourne le bon match
 - GET /matches/:id/seats retourne sièges avec statut
 
-### Commit message
-```
-feat(matches): add catalogue endpoints with filtering and seat availability
-```
-
 ---
 
-## TASK-009 — Frontend LoginPage + OTPPage
+## TASK-009 — Frontend LoginPage (Double Option)
 **Status:** TODO
 **Priorité:** HAUTE
 **MoSCoW:** MUST HAVE — US-01
-**Dépend de:** TASK-006
+**Dépend de:** TASK-007
 **Réf:** CLAUDE.md section 6 (design system)
 
 ### Ce que l'agent doit faire
 - Créer src/pages/LoginPage.jsx
-  - Formulaire email + password
-  - Style Dark Premium (fond bg-primary, inputs bg-tertiary, CTA gold)
-  - Appel POST /api/v1/auth/login via src/services/authService.js
-  - Redirection vers OTPPage si succès
-- Créer src/pages/OTPPage.jsx
-  - Input 6 chiffres (6 cases séparées)
-  - Countdown 5min pour le tempToken
-  - Appel POST /api/v1/auth/verify-otp
-  - Redirection vers catalogue si succès
-- Créer src/store/authStore.js (Zustand)
-  - Stocker accessToken en mémoire (jamais localStorage)
+  - Formulaire de connexion classique (email et mot de passe)
+  - Boutons de connexion Google et GitHub premium via Firebase SDK
+  - Intégrer l'échange des identifiants (locaux ou Firebase ID Token) contre nos jetons locaux
+  - Gérer l'état d'authentification globale dans `authStore.js` (Zustand)
+  - Redirection vers le catalogue lors du succès
 
 ### Tests composant
-- LoginPage affiche erreur si mauvais password
-- OTPPage affiche countdown
-- Redirection correcte après succès
-
-### Commit message
-```
-feat(ui): add LoginPage and OTPPage with dark premium design and Zustand store
-```
+- LoginPage affiche les deux options (formulaire local + boutons OAuth)
+- L'appel au service approprié est déclenché lors de la soumission
 
 ---
 
-## TASK-010 — Frontend RegisterPage
+## TASK-010 — Frontend RegisterPage (Création de compte locale)
 **Status:** TODO
 **Priorité:** HAUTE
 **MoSCoW:** MUST HAVE — US-01
-**Dépend de:** TASK-004, TASK-009
+**Dépend de:** TASK-009
 
 ### Ce que l'agent doit faire
 - Créer src/pages/RegisterPage.jsx
-  - Formulaire complet (email, password, firstName, lastName, phone)
-  - Validation côté client
-  - Style Dark Premium cohérent avec LoginPage
-  - Appel POST /api/v1/auth/register
+  - Formulaire d'inscription (email, mot de passe, prénom, nom, téléphone)
+  - Validation basique des champs côté client
+  - Soumission vers `POST /api/v1/auth/register`
+  - Connexion automatique et redirection vers le catalogue après succès
+- Mettre à jour les routes frontend dans `App.jsx`
 
 ### Tests composant
-- Validation formulaire champs requis
-- Erreur si email déjà pris
-- Redirection vers LoginPage après succès
-
-### Commit message
-```
-feat(ui): add RegisterPage with form validation and dark premium design
-```
+- RegisterPage affiche tous les champs requis
+- Le clic sur soumission appelle le service d'enregistrement local
 
 ---
 
@@ -409,7 +310,7 @@ chore(ci): add GitHub Actions pipeline with Jest coverage and Azure deployment
 | TASK-004 | MUST | US-01 | feat(auth) |
 | TASK-005 | MUST | US-01 | feat(auth) |
 | TASK-006 | MUST | US-01 | feat(auth) |
-| TASK-007 | MUST | US-01 | feat(auth) |
+| TASK-007 | MUST | US-01 | chore(firebase) |
 | TASK-008 | MUST | US-02 | feat(matches) |
 | TASK-009 | MUST | US-01 | feat(ui) |
 | TASK-010 | MUST | US-01 | feat(ui) |
@@ -417,4 +318,4 @@ chore(ci): add GitHub Actions pipeline with Jest coverage and Azure deployment
 | TASK-012 | Infrastructure | - | chore(ci) |
 
 ## Fonctionnalité critique couverte
-- ✅ Fonctionnalité critique 1/3 : Authentification 2FA (TASK-004 à 007)
+- ✅ Fonctionnalité critique 1/3 : Authentification Hybride (Local JWT + Firebase OAuth) (TASK-004 à TASK-010)

@@ -10,12 +10,16 @@ function createLogger(env = process.env) {
     timestamp: pino.stdTimeFunctions.isoTime,
     redact: {
       paths: [
+        'idToken',
+        'sessionCookie',
         'password',
         'passwordHash',
-        'otpCode',
+        'refreshToken',
+        '*.idToken',
+        '*.sessionCookie',
         '*.password',
         '*.passwordHash',
-        '*.otpCode',
+        '*.refreshToken',
         'req.headers.authorization',
         'req.headers.cookie',
       ],

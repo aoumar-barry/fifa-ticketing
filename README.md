@@ -15,7 +15,7 @@ Plateforme web de billetterie pour la Coupe du Monde FIFA 2026 — Projet Master
 | Backend | Node.js + Express (API REST `/api/v1/`) |
 | Base de données | Azure Cosmos DB (API MongoDB) via Mongoose |
 | Cache / Lock | Upstash Redis |
-| Auth | JWT + bcrypt + OTP email |
+| Auth | Hybride (Local JWT + Firebase OAuth Google/GitHub) |
 | Paiement | Stripe (sandbox) |
 | Stockage | Azure Blob Storage (PDFs billets) |
 | Déploiement | Azure Static Web Apps (front) + Azure Container Apps (back) |
@@ -81,7 +81,7 @@ cd frontend && npm test
 
 - **Commits** : Conventional Commits (`feat(scope): ...`, `fix(scope): ...`)
 - **Branches** : `main` (prod), `develop` (intégration), `feature/*`, `hotfix/*`
-- **JWT** : stocké en cookie `httpOnly` uniquement (jamais en `localStorage`)
+- **Session** : stockée en cookie `httpOnly` uniquement (gérée via cookie `refreshToken` et JWT d'accès en mémoire, jamais dans `localStorage`)
 - **Logique métier** : strictement côté backend (services), jamais dans React
 
 ---

@@ -30,8 +30,11 @@ describe('config/env — loadEnv', () => {
       NODE_ENV: 'production',
       COSMOS_CONNECTION_STRING: 'mongodb://x',
       UPSTASH_REDIS_URL: 'rediss://x',
-      JWT_ACCESS_SECRET: 'a',
-      JWT_REFRESH_SECRET: 'b',
+      JWT_ACCESS_SECRET: 'access',
+      JWT_REFRESH_SECRET: 'refresh',
+      FIREBASE_PROJECT_ID: 'x',
+      FIREBASE_CLIENT_EMAIL: 'y',
+      FIREBASE_PRIVATE_KEY: 'z',
       STRIPE_SECRET_KEY: 'sk_test_x',
       STRIPE_WEBHOOK_SECRET: 'whsec_x',
     });

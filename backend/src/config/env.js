@@ -14,6 +14,10 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(1).optional(),
   JWT_REFRESH_SECRET: z.string().min(1).optional(),
 
+  FIREBASE_PROJECT_ID: z.string().min(1).optional(),
+  FIREBASE_CLIENT_EMAIL: z.string().min(1).optional(),
+  FIREBASE_PRIVATE_KEY: z.string().min(1).optional(),
+
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
 
@@ -47,6 +51,9 @@ function loadEnv(raw = process.env) {
       'UPSTASH_REDIS_URL',
       'JWT_ACCESS_SECRET',
       'JWT_REFRESH_SECRET',
+      'FIREBASE_PROJECT_ID',
+      'FIREBASE_CLIENT_EMAIL',
+      'FIREBASE_PRIVATE_KEY',
       'STRIPE_SECRET_KEY',
       'STRIPE_WEBHOOK_SECRET',
     ];

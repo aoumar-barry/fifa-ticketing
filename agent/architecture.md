@@ -99,7 +99,6 @@ src/
 | Évènement | Émetteur | Listener(s) |
 |---|---|---|
 | `user.registered` | AuthService | EmailService (bienvenue) |
-| `otp.requested` | AuthService | EmailService (envoi code) |
 | `order.confirmed` | PaymentService | TicketService (génération), EmailService (confirmation) |
 | `ticket.created` | TicketService | EmailService (PDF en pièce jointe) |
 | `cart.expired` | CartService (TTL) | SeatService (libération lock) |
@@ -108,10 +107,8 @@ src/
 
 ## 6. Sécurité
 
-- JWT access (15 min) en header `Authorization: Bearer` OU cookie httpOnly
-- JWT refresh (7 jours) en cookie httpOnly + Secure + SameSite=strict
-- Bcrypt cost 12 minimum
-- Rate limit `/auth/login` et `/auth/verify-otp` (5 req/min/IP)
+- Session sécurisée via cookie httpOnly `refreshToken` (JWT local, max 7 jours) et token d'accès en mémoire
+- Authentification hybride : validation locale (JWT) ou Firebase (via SDK admin)
 - Helmet + CORS strict (`FRONTEND_URL` only)
 - Stripe webhook : signature `stripe.webhooks.constructEvent` obligatoire
 - Aucune donnée bancaire en DB (Stripe garde tout)

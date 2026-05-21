@@ -9,26 +9,28 @@ const UserSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    passwordHash: { type: String, required: true },
+    passwordHash: {
+      type: String,
+    },
+    firebaseUid: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     phone: { type: String, trim: true },
-    otpCode: { type: String, select: false },
-    otpExpiresAt: { type: Date, select: false },
-    isVerified: { type: Boolean, default: false },
+    isVerified: { type: Boolean, default: true },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     createdAt: { type: Date, default: Date.now },
   },
   { versionKey: false },
 );
 
-UserSchema.index({ email: 1 }, { unique: true });
-
 UserSchema.set('toJSON', {
   transform: (_doc, ret) => {
     delete ret.passwordHash;
-    delete ret.otpCode;
-    delete ret.otpExpiresAt;
     return ret;
   },
 });
