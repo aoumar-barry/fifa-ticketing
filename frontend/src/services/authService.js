@@ -13,6 +13,13 @@ export class AuthApiError extends Error {
 }
 
 /**
+ * Default fetch options — credentials: 'include' is required so that
+ * httpOnly cookies (refreshToken) are sent and received across the
+ * Vite dev-server proxy.
+ */
+const defaultOpts = { credentials: 'include' };
+
+/**
  * Helper to perform fetch requests with default options
  */
 async function handleResponse(response) {
@@ -43,6 +50,7 @@ async function handleResponse(response) {
  */
 export async function registerLocal(email, password, firstName, lastName, phone) {
   const res = await fetch(`${API_BASE_URL}/register`, {
+    ...defaultOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password, firstName, lastName, phone }),
@@ -55,6 +63,7 @@ export async function registerLocal(email, password, firstName, lastName, phone)
  */
 export async function loginLocal(email, password) {
   const res = await fetch(`${API_BASE_URL}/login`, {
+    ...defaultOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
@@ -67,6 +76,7 @@ export async function loginLocal(email, password) {
  */
 export async function loginFirebase(idToken) {
   const res = await fetch(`${API_BASE_URL}/firebase`, {
+    ...defaultOpts,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -81,6 +91,7 @@ export async function loginFirebase(idToken) {
  */
 export async function refreshAccessToken() {
   const res = await fetch(`${API_BASE_URL}/refresh`, {
+    ...defaultOpts,
     method: 'POST',
   });
   return handleResponse(res);
@@ -91,6 +102,7 @@ export async function refreshAccessToken() {
  */
 export async function logout() {
   const res = await fetch(`${API_BASE_URL}/logout`, {
+    ...defaultOpts,
     method: 'POST',
   });
   return handleResponse(res);
