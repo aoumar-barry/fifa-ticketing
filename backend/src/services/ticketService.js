@@ -74,7 +74,7 @@ async function createTicketsForOrder(order, cartItems) {
     await ticket.save();
 
     // Step 6: sendEmail
-    await sendTicketEmail(user.email, pdfUrl, { ticket, match, seat });
+    await sendTicketEmail(user.email, pdfUrl, { ticket, match, seat, order });
 
     // Step 7: DEL seat lock from Redis & mark seat as sold in DB
     await unlockSeat(item.seatId.toString()).catch(() => {});
