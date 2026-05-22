@@ -1,4 +1,6 @@
-const API_BASE_URL = '/api/v1/matches';
+import { API_URL } from '../config/api';
+
+const API_BASE_URL = `${API_URL}/api/v1/matches`;
 
 /**
  * Custom error class for Match API requests

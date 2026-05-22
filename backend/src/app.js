@@ -12,9 +12,31 @@ function createApp({ frontendUrl } = {}) {
   const app = express();
 
   app.use(helmet());
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ];
+  const customFrontendUrl = frontendUrl || process.env.FRONTEND_URL;
+  if (customFrontendUrl) {
+    allowedOrigins.push(customFrontendUrl);
+  }
+
   app.use(
     cors({
-      origin: frontendUrl || process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, or tests)
+        if (!origin) return callback(null, true);
+        
+        const isAllowed = allowedOrigins.includes(origin) || 
+                          origin.endsWith('.onrender.com') || 
+                          /^http:\/\/localhost:\d+$/.test(origin);
+                          
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       credentials: true,
     }),
   );

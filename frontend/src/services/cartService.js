@@ -1,6 +1,7 @@
 import { useAuthStore } from '../store/authStore';
+import { API_URL } from '../config/api';
 
-const API_BASE_URL = '/api/v1/cart';
+const API_BASE_URL = `${API_URL}/api/v1/cart`;
 
 export class CartApiError extends Error {
   constructor(status, message, code) {

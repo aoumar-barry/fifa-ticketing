@@ -1,4 +1,6 @@
-const API_BASE_URL = '/api/v1/auth';
+import { API_URL } from '../config/api';
+
+const API_BASE_URL = `${API_URL}/api/v1/auth`;
 
 /**
  * Custom error class for API requests
