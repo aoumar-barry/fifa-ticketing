@@ -7,18 +7,14 @@ const JWT_ACCESS_SECRET = env.JWT_ACCESS_SECRET;
 
 async function authMiddleware(req, res, next) {
   try {
+    let token = null;
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Access token is required',
-          status: 401,
-        },
-      });
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split('Bearer ')[1]?.trim();
+    } else if (req.query?.token) {
+      token = req.query.token;
     }
 
-    const token = authHeader.split('Bearer ')[1]?.trim();
     if (!token) {
       return res.status(401).json({
         error: {

@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const mailer = require('../config/mailer');
 const eventBus = require('../utils/eventBus');
 const { Ticket } = require('../models');
 const { logger } = require('../utils/logger');
@@ -132,28 +132,18 @@ eventBus.on('match:updated', async ({ match }) => {
     `;
 
     // Send emails to all buyers
-    const host = process.env.SMTP_HOST;
-    const port = parseInt(process.env.SMTP_PORT || '587', 10);
-    const smtpUser = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
+    const transporter = mailer.createMailTransporter();
 
     for (const buyer of buyers) {
       const mailOptions = {
-        from: `"FIFA World Cup 2026" <${smtpUser || 'tickets@fifa2026.com'}>`,
+        from: `"FIFA World Cup 2026" <${mailer.fromEmail}>`,
         to: buyer.email,
         subject: `⚠️ Match modifié : ${match.teamA} vs ${match.teamB} - FIFA World Cup 2026`,
         html: htmlContent,
       };
 
-      if (host && smtpUser && pass) {
+      if (transporter) {
         try {
-          const transporter = nodemailer.createTransport({
-            host,
-            port,
-            secure: port === 465,
-            auth: { user: smtpUser, pass },
-          });
-
           await transporter.sendMail(mailOptions);
           logger.info(`[matchListener] Notification envoyée à ${buyer.email}`);
         } catch (err) {

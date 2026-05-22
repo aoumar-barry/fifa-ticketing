@@ -27,6 +27,7 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().int().positive().optional(),
   SMTP_USER: z.string().min(1).optional(),
   SMTP_PASS: z.string().min(1).optional(),
+  SMTP_FROM: z.string().email().optional(),
 
   AZURE_STORAGE_CONNECTION_STRING: z.string().min(1).optional(),
   AZURE_CONTAINER_NAME: z.string().min(1).default('tickets'),

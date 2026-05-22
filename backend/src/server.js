@@ -37,6 +37,17 @@ async function bootstrap() {
     logger.warn('[bootstrap] Redis URL missing — Redis disabled (dev only)');
   }
 
+  // Start local SMTP Dev Server if configured for development
+  let smtpServer = null;
+  if (env.NODE_ENV === 'development' && (env.SMTP_HOST === '127.0.0.1' || env.SMTP_HOST === 'localhost')) {
+    try {
+      const { startSmtpDevServer } = require('./utils/smtpDevServer');
+      smtpServer = startSmtpDevServer(env.SMTP_PORT || 1025);
+    } catch (err) {
+      logger.error({ err }, '[bootstrap] Failed to start local SMTP dev server');
+    }
+  }
+
   const app = createApp({ frontendUrl: env.FRONTEND_URL });
 
   const server = app.listen(env.PORT, () => {
@@ -45,6 +56,14 @@ async function bootstrap() {
 
   const shutdown = async (signal) => {
     logger.info(`[server] ${signal} received, closing...`);
+    if (smtpServer) {
+      try {
+        const { stopSmtpDevServer } = require('./utils/smtpDevServer');
+        stopSmtpDevServer();
+      } catch (err) {
+        logger.error({ err }, '[server] Failed to stop local SMTP dev server');
+      }
+    }
     server.close(async () => {
       await disconnectDB().catch(() => {});
       await disconnectRedis().catch(() => {});

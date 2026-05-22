@@ -70,6 +70,31 @@ describe('Security Middlewares', () => {
       expect(res.status).not.toHaveBeenCalled();
     });
 
+    it('successfully authenticates with valid token in query parameters (token=...) and attaches user to req.user', async () => {
+      const user = await User.create({
+        email: 'auth-query@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
+
+      const token = jwt.sign(
+        { userId: user._id, role: user.role, email: user.email },
+        JWT_ACCESS_SECRET,
+        { expiresIn: '15m' }
+      );
+
+      const { req, res, next } = mockExpress();
+      req.query = { token };
+
+      await authMiddleware(req, res, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(next).toHaveBeenCalledWith(); // called with no errors
+      expect(req.user).toBeDefined();
+      expect(req.user._id.toString()).toBe(user._id.toString());
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
     it('returns 401 when Authorization header is missing', async () => {
       const { req, res, next } = mockExpress();
 

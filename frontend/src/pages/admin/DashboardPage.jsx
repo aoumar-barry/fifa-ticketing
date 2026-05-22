@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { fetchAdminStats, exportAdminSalesCSV } from '../../services/adminService';
+import { API_URL } from '../../config/api';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, accessToken } = useAuthStore();
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -356,7 +357,7 @@ export default function DashboardPage() {
                   <span>Accéder à la boutique</span>
                   <span>→</span>
                 </Link>
-                <a href="/api/v1/admin/stats" target="_blank" rel="noreferrer" className="text-xs text-brand-gold hover:underline flex items-center gap-1">
+                <a href={`${API_URL}/api/v1/admin/stats?token=${accessToken}`} target="_blank" rel="noreferrer" className="text-xs text-brand-gold hover:underline flex items-center gap-1">
                   <span>Visualiser le JSON brut</span>
                   <span>→</span>
                 </a>
