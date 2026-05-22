@@ -115,4 +115,68 @@ describe('seatLockService', () => {
       expect(await isLocked(seatId2)).toBe(userId2);
     });
   });
+
+  describe('memory TTL expiration', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should delete the seat lock after TTL expiration', async () => {
+      await lockSeat(seatId, userId1);
+      expect(await isLocked(seatId)).toBe(userId1);
+
+      // Fast-forward time
+      jest.advanceTimersByTime(_internals.LOCK_TTL * 1000);
+
+      expect(await isLocked(seatId)).toBeNull();
+    });
+  });
+
+  describe('Redis mode', () => {
+    const { setRedisClient } = require('../../config/redis');
+    let mockRedis;
+
+    beforeEach(() => {
+      mockRedis = {
+        set: jest.fn(),
+        del: jest.fn(),
+        get: jest.fn(),
+      };
+      setRedisClient(mockRedis);
+    });
+
+    afterEach(() => {
+      setRedisClient(null);
+    });
+
+    it('should lock seat using Redis', async () => {
+      mockRedis.set.mockResolvedValue('OK');
+      const result = await lockSeat(seatId, userId1);
+      expect(result).toBe(true);
+      expect(mockRedis.set).toHaveBeenCalledWith(`seat:${seatId}`, userId1, 'EX', _internals.LOCK_TTL, 'NX');
+    });
+
+    it('should throw AppError if lock fails on Redis', async () => {
+      mockRedis.set.mockResolvedValue(null);
+      await expect(lockSeat(seatId, userId1)).rejects.toThrow();
+    });
+
+    it('should unlock seat using Redis', async () => {
+      mockRedis.del.mockResolvedValue(1);
+      await unlockSeat(seatId);
+      expect(mockRedis.del).toHaveBeenCalledWith(`seat:${seatId}`);
+    });
+
+    it('should check lock using Redis', async () => {
+      mockRedis.get.mockResolvedValue(userId1);
+      const result = await isLocked(seatId);
+      expect(result).toBe(userId1);
+      expect(mockRedis.get).toHaveBeenCalledWith(`seat:${seatId}`);
+    });
+  });
 });
+

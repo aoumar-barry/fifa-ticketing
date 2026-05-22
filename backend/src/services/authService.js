@@ -156,11 +156,9 @@ async function loginOrRegisterFirebase(idToken) {
 
         if (fullName) {
           const parts = fullName.trim().split(/\s+/);
-          if (parts.length > 0) {
-            firstName = parts[0];
-            lastName = parts.slice(1).join(' ') || 'User';
-          }
-        } else if (emailName) {
+          firstName = parts[0];
+          lastName = parts.slice(1).join(' ') || 'User';
+        } else {
           firstName = emailName;
         }
 

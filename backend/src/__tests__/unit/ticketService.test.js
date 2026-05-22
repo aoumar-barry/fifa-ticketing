@@ -224,6 +224,12 @@ describe('Ticket Service Unit Tests', () => {
       expect(callSequence[4].seatId).toBe(seat._id.toString());
     });
 
+    it('should catch error if unlockSeat fails during ticket generation', async () => {
+      mockUnlockSeat.mockRejectedValueOnce(new Error('Redis failure'));
+      const cartItems = [{ matchId: match._id, seatId: seat._id, price: 250 }];
+      await expect(ticketService.createTicketsForOrder(order, cartItems)).resolves.not.toThrow();
+    });
+
     it('should throw AppError if user does not exist', async () => {
       const badOrder = {
         _id: new mongoose.Types.ObjectId(),

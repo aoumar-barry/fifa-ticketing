@@ -3,7 +3,7 @@ const { Order, Payment, Cart, Seat, Match } = require('../models');
 const { unlockSeat } = require('./seatLockService');
 const { AppError } = require('./authService');
 
-const isMockMode = process.env.NODE_ENV !== 'test' && (
+const isMockMode = () => process.env.NODE_ENV !== 'test' && (
   !process.env.STRIPE_SECRET_KEY ||
   process.env.STRIPE_SECRET_KEY.startsWith('mock') ||
   process.env.STRIPE_SECRET_KEY === 'sk_test_...'
@@ -37,7 +37,7 @@ async function createPaymentIntent(cartId, userId) {
 
   // Create Stripe PaymentIntent
   let paymentIntent;
-  if (isMockMode) {
+  if (isMockMode()) {
     const mockId = `pi_mock_${Math.random().toString(36).substring(2, 11)}`;
     paymentIntent = {
       id: mockId,
@@ -104,7 +104,7 @@ async function confirmPayment(cartId, paymentIntentId, userId) {
     // Keep reference to satisfy eslint and potential future authorization checks
   }
   let paymentIntent;
-  if (isMockMode) {
+  if (isMockMode()) {
     paymentIntent = {
       id: paymentIntentId,
       status: 'succeeded',
