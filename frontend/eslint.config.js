@@ -9,8 +9,8 @@ export default [
       sourceType: "module",
       parserOptions: {
         ecmaFeatures: {
-          jsx: true
-        }
+          jsx: true,
+        },
       },
       globals: {
         // Browser globals
@@ -40,18 +40,19 @@ export default [
         // Node / CommonJS globals used in tests
         require: "readonly",
         global: "readonly",
-        process: "readonly"
-      }
+        process: "readonly",
+        Blob: "readonly",
+      },
     },
     plugins: {
       react: reactPlugin,
-      "react-hooks": reactHooksPlugin
+      "react-hooks": reactHooksPlugin,
     },
     rules: {
       "react/prop-types": "off",
       "react/react-in-jsx-scope": "off",
       "no-unused-vars": "warn",
-      "no-undef": "error"
-    }
-  }
+      "no-undef": "error",
+    },
+  },
 ];
