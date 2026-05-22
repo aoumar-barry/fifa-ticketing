@@ -5,6 +5,12 @@ import CataloguePage from '../../pages/CataloguePage';
 import { useAuthStore } from '../../store/authStore';
 import { fetchMatches } from '../../services/matchService';
 
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
+
 // Mock auth store
 jest.mock('../../store/authStore');
 
@@ -241,5 +247,80 @@ describe('CataloguePage Component', () => {
     fireEvent.click(logoutBtn);
 
     expect(mockLogout).toHaveBeenCalled();
+  });
+
+  test('navigates to user profile page when clicking profile button', async () => {
+    render(
+      <BrowserRouter>
+        <CataloguePage />
+      </BrowserRouter>
+    );
+
+    const profileBtn = screen.getByRole('button', { name: /mon profil/i });
+    fireEvent.click(profileBtn);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/profile');
+  });
+
+  test('handles pagination correctly when there are more than 6 matches', async () => {
+    const largeMockMatches = [
+      { id: 'm1', teamA: 'TeamA1', teamB: 'TeamB1', date: '2026-06-12T20:00:00Z', stadium: { name: 'S1' } },
+      { id: 'm2', teamA: 'TeamA2', teamB: 'TeamB2', date: '2026-06-12T20:00:00Z', stadium: { name: 'S1' } },
+      { id: 'm3', teamA: 'TeamA3', teamB: 'TeamB3', date: '2026-06-12T20:00:00Z', stadium: { name: 'S1' } },
+      { id: 'm4', teamA: 'TeamA4', teamB: 'TeamB4', date: '2026-06-12T20:00:00Z', stadium: { name: 'S1' } },
+      { id: 'm5', teamA: 'TeamA5', teamB: 'TeamB5', date: '2026-06-12T20:00:00Z', stadium: { name: 'S1' } },
+      { id: 'm6', teamA: 'TeamA6', teamB: 'TeamB6', date: '2026-06-12T20:00:00Z', stadium: { name: 'S1' } },
+      { id: 'm7', teamA: 'TeamA7', teamB: 'TeamB7', date: '2026-06-12T20:00:00Z', stadium: { name: 'S1' } },
+      { id: 'm8', teamA: 'TeamA8', teamB: 'TeamB8', date: '2026-06-12T20:00:00Z', stadium: { name: 'S1' } },
+    ];
+    fetchMatches.mockResolvedValueOnce(largeMockMatches);
+
+    render(
+      <BrowserRouter>
+        <CataloguePage />
+      </BrowserRouter>
+    );
+
+    // Wait for loader to disappear and data to render
+    await waitFor(() => expect(screen.queryByTestId('loading-skeleton')).not.toBeInTheDocument());
+
+    // Should only render the first 6 matches
+    expect(screen.getByText('TeamA1')).toBeInTheDocument();
+    expect(screen.getByText('TeamA6')).toBeInTheDocument();
+    expect(screen.queryByText('TeamA7')).not.toBeInTheDocument();
+
+    // Check pagination controls are visible
+    expect(screen.getByTestId('pagination-controls')).toBeInTheDocument();
+    expect(screen.getByTestId('page-indicator')).toHaveTextContent('Page 1 sur 2');
+
+    // Click next page
+    const nextBtn = screen.getByRole('button', { name: /suivant/i });
+    const prevBtn = screen.getByRole('button', { name: /précédent/i });
+    expect(prevBtn).toBeDisabled();
+    expect(nextBtn).not.toBeDisabled();
+
+    fireEvent.click(nextBtn);
+
+    // Page 2 matches should now be visible, page 1 should not
+    expect(screen.getByTestId('page-indicator')).toHaveTextContent('Page 2 sur 2');
+    expect(screen.queryByText('TeamA1')).not.toBeInTheDocument();
+    expect(screen.getByText('TeamA7')).toBeInTheDocument();
+    expect(screen.getByText('TeamA8')).toBeInTheDocument();
+    expect(prevBtn).not.toBeDisabled();
+    expect(nextBtn).toBeDisabled();
+
+    // Click previous page
+    fireEvent.click(prevBtn);
+    expect(screen.getByTestId('page-indicator')).toHaveTextContent('Page 1 sur 2');
+    expect(screen.getByText('TeamA1')).toBeInTheDocument();
+    expect(screen.queryByText('TeamA7')).not.toBeInTheDocument();
+
+    // Filter to reset page: search TeamA7
+    const searchInput = screen.getByPlaceholderText(/rechercher une équipe/i);
+    fireEvent.change(searchInput, { target: { value: 'TeamA7' } });
+
+    // Since there's only 1 match (TeamA7) matching now, pagination controls should disappear
+    expect(screen.getByText('TeamA7')).toBeInTheDocument();
+    expect(screen.queryByTestId('pagination-controls')).not.toBeInTheDocument();
   });
 });

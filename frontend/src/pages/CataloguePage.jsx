@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { fetchMatches } from '../services/matchService';
 import MatchCard from '../components/MatchCard';
 
 export default function CataloguePage() {
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [matches, setMatches] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -13,6 +15,12 @@ export default function CataloguePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStadium, setSelectedStadium] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset to first page when any filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedStadium, selectedDate]);
 
   const loadMatches = async () => {
     setIsLoading(true);
@@ -88,6 +96,12 @@ export default function CataloguePage() {
               <span className="text-text-muted">Connecté en tant que</span>
               <span className="text-text-secondary font-medium">{user?.email}</span>
             </div>
+            <button
+              onClick={() => navigate('/profile')}
+              className="px-4 py-1.5 bg-brand-gold text-bg-primary hover:bg-brand-gold-light rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95"
+            >
+              Mon Profil
+            </button>
             <button
               onClick={logout}
               className="px-4 py-1.5 bg-bg-tertiary hover:bg-bg-elevated border border-border-light rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95"
@@ -234,10 +248,34 @@ export default function CataloguePage() {
         {!isLoading && !error && (
           <>
             {filteredMatches.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredMatches.map((match) => (
-                  <MatchCard key={match.id} match={match} />
-                ))}
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredMatches.slice((currentPage - 1) * 6, (currentPage - 1) * 6 + 6).map((match) => (
+                    <MatchCard key={match.id} match={match} />
+                  ))}
+                </div>
+                
+                {filteredMatches.length > 6 && (
+                  <div className="flex items-center justify-center gap-4 mt-8" data-testid="pagination-controls">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 bg-bg-tertiary hover:bg-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed border border-border-light rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95 text-text-primary"
+                    >
+                      Précédent
+                    </button>
+                    <span className="text-xs text-text-secondary font-medium" data-testid="page-indicator">
+                      Page {currentPage} sur {Math.ceil(filteredMatches.length / 6)}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredMatches.length / 6)))}
+                      disabled={currentPage === Math.ceil(filteredMatches.length / 6)}
+                      className="px-4 py-2 bg-bg-tertiary hover:bg-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed border border-border-light rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95 text-text-primary"
+                    >
+                      Suivant
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-16 bg-bg-secondary/40 border border-border-subtle border-dashed rounded-xl max-w-xl mx-auto my-6">
