@@ -24,7 +24,7 @@ const mockStripe = {
     }),
   },
   webhooks: {
-    constructEvent: jest.fn().mockImplementation((rawBody, signature, secret) => {
+    constructEvent: jest.fn().mockImplementation((rawBody, signature) => {
       if (signature === 'invalid_sig') {
         throw new Error('Invalid signature');
       }

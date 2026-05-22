@@ -14,11 +14,8 @@ describe('Matches integration tests', () => {
   let stadium1;
   let stadium2;
   let match1;
-  let match2;
   let matchInactive;
   let seatA1;
-  let seatA2;
-  let seatB1;
 
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
@@ -86,7 +83,7 @@ describe('Matches integration tests', () => {
       isActive: true,
     });
 
-    match2 = await Match.create({
+    await Match.create({
       teamA: 'France',
       teamB: 'Japan',
       round: 'group',
@@ -121,7 +118,7 @@ describe('Matches integration tests', () => {
       status: 'available',
     });
 
-    seatA2 = await Seat.create({
+    await Seat.create({
       stadiumId: stadium1._id,
       section: 'A1',
       row: 'A',
@@ -131,7 +128,7 @@ describe('Matches integration tests', () => {
       status: 'available',
     });
 
-    seatB1 = await Seat.create({
+    await Seat.create({
       stadiumId: stadium1._id,
       section: 'B1',
       row: 'E',

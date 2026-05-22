@@ -164,7 +164,7 @@ describe('Ticket Service Unit Tests', () => {
         return mockQrBase64;
       });
 
-      mockGenerateTicketPDF.mockImplementationOnce(async (t, qr, m, s) => {
+      mockGenerateTicketPDF.mockImplementationOnce(async (t) => {
         callSequence.push({ step: 'generateTicketPDF', ticketId: t._id.toString() });
         return mockPdfBuffer;
       });
@@ -174,7 +174,7 @@ describe('Ticket Service Unit Tests', () => {
         return mockPdfUrl;
       });
 
-      mockSendTicketEmail.mockImplementationOnce(async (email, url, details) => {
+      mockSendTicketEmail.mockImplementationOnce(async (email, url) => {
         callSequence.push({ step: 'sendTicketEmail', email, url });
       });
 

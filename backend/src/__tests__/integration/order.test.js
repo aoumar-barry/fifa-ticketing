@@ -45,7 +45,6 @@ describe('Order integration tests', () => {
   let order1;
   let order2;
   let ticket1;
-  let ticket2;
 
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
@@ -195,7 +194,7 @@ describe('Order integration tests', () => {
     });
 
     // Create ticket for order 2
-    ticket2 = await Ticket.create({
+    await Ticket.create({
       orderId: order2._id,
       matchId: match._id,
       seatId: seat2._id,

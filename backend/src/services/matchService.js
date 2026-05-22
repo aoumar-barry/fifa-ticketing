@@ -107,7 +107,7 @@ async function getMatchSeats(matchId) {
       const keys = seats.map(s => `seat:${s._id}`);
       locks = await redis.mget(keys);
     }
-  } catch (err) {
+  } catch {
     // Fail-safe if Redis client is not configured or fails
     // In production, we log, but do not block the request
   }

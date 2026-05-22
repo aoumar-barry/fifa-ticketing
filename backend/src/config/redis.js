@@ -1,4 +1,5 @@
 const Redis = require('ioredis');
+const { URL } = require('url');
 
 let client = null;
 
@@ -14,7 +15,7 @@ function createRedisClient({ url, logger } = {}) {
       parsed.password = '******';
     }
     maskedUrl = parsed.toString();
-  } catch (err) {
+  } catch {
     maskedUrl = url;
   }
   logger?.info(`[redis] Initializing connection to: ${maskedUrl}`);
