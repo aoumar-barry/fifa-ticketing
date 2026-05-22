@@ -2,9 +2,9 @@ name: CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, preprod]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, preprod]
 
 jobs:
   # ============================================================
@@ -86,4 +86,68 @@ jobs:
         with:
           name: frontend-dist
           path: frontend/dist
+
+  # ============================================================
+  # Deploy — Trigger Render builds via Deploy Hooks
+  # ============================================================
+  deploy:
+    name: Trigger Render Deploy
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Deploy to Staging (develop)
+        if: github.ref == 'refs/heads/develop'
+        env:
+          BACKEND_HOOK: ${{ secrets.RENDER_DEVELOP_BACKEND_HOOK }}
+          FRONTEND_HOOK: ${{ secrets.RENDER_DEVELOP_FRONTEND_HOOK }}
+        run: |
+          echo "Triggering develop deployment on Render..."
+          if [ -n "$BACKEND_HOOK" ]; then
+            curl -f -X POST "$BACKEND_HOOK"
+          else
+            echo "RENDER_DEVELOP_BACKEND_HOOK is not set."
+          fi
+          if [ -n "$FRONTEND_HOOK" ]; then
+            curl -f -X POST "$FRONTEND_HOOK"
+          else
+            echo "RENDER_DEVELOP_FRONTEND_HOOK is not set."
+          fi
+
+      - name: Deploy to Preproduction (preprod)
+        if: github.ref == 'refs/heads/preprod'
+        env:
+          BACKEND_HOOK: ${{ secrets.RENDER_PREPROD_BACKEND_HOOK }}
+          FRONTEND_HOOK: ${{ secrets.RENDER_PREPROD_FRONTEND_HOOK }}
+        run: |
+          echo "Triggering preprod deployment on Render..."
+          if [ -n "$BACKEND_HOOK" ]; then
+            curl -f -X POST "$BACKEND_HOOK"
+          else
+            echo "RENDER_PREPROD_BACKEND_HOOK is not set."
+          fi
+          if [ -n "$FRONTEND_HOOK" ]; then
+            curl -f -X POST "$FRONTEND_HOOK"
+          else
+            echo "RENDER_PREPROD_FRONTEND_HOOK is not set."
+          fi
+
+      - name: Deploy to Production (main)
+        if: github.ref == 'refs/heads/main'
+        env:
+          BACKEND_HOOK: ${{ secrets.RENDER_MAIN_BACKEND_HOOK }}
+          FRONTEND_HOOK: ${{ secrets.RENDER_MAIN_FRONTEND_HOOK }}
+        run: |
+          echo "Triggering production deployment on Render..."
+          if [ -n "$BACKEND_HOOK" ]; then
+            curl -f -X POST "$BACKEND_HOOK"
+          else
+            echo "RENDER_MAIN_BACKEND_HOOK is not set."
+          fi
+          if [ -n "$FRONTEND_HOOK" ]; then
+            curl -f -X POST "$FRONTEND_HOOK"
+          else
+            echo "RENDER_MAIN_FRONTEND_HOOK is not set."
+          fi
+
 
