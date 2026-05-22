@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { Match, Stadium, Seat, Ticket } = require('../models');
 const { AppError } = require('../utils/AppError');
+const eventBus = require('../utils/eventBus');
 
 /**
  * Format a match document to the API contract.
@@ -123,6 +124,10 @@ async function updateMatch(id, matchData) {
 
   await match.save();
   await match.populate('stadiumId');
+
+  // Emit event for match update notifications
+  eventBus.emit('match:updated', { match });
+
   return formatMatch(match);
 }
 

@@ -11,6 +11,9 @@ const {
 const { logger } = require('./utils/logger');
 const { createApp } = require('./app');
 
+// Register event listeners (side-effect imports)
+require('./listeners/matchListener');
+
 async function bootstrap() {
   const env = loadEnv();
 
