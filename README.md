@@ -2,97 +2,84 @@
 
 Plateforme web de billetterie pour la Coupe du Monde FIFA 2026 — Projet Master 2 ALM (ESN AST).
 
-> **Avant toute contribution** : lire intégralement [`CLAUDE.md`](./CLAUDE.md).
-> Toutes les décisions techniques y sont figées (stack, architecture, règles métier, design system).
+---
+
+## 🚀 Stack Technique
+
+| Couche | Technologie | Détail / Rôle |
+| :--- | :--- | :--- |
+| **Frontend** | React + Vite + TailwindCSS | SPA moderne, fluide et responsive |
+| **Backend** | Node.js + Express | API REST accessible sous `/api/v1/` |
+| **Base de données** | MongoDB Atlas | Cluster cloud managé via Mongoose |
+| **Cache / Verrou** | Render Redis | Verrous de sièges atomiques (10 min) |
+| **Auth** | Hybride (Local JWT + Firebase) | Connexion locale sécurisée + Google OAuth |
+| **Paiement** | Stripe (sandbox) | Gestion conforme PCI-DSS par délégation |
+| **Stockage Fichiers** | Render Disk | Volume persistant pour les billets PDF |
 
 ---
 
-## Stack
+## ⚙️ Installation des dépendances
 
-| Couche | Technologie |
-|---|---|
-| Frontend | React + Vite + TailwindCSS |
-| Backend | Node.js + Express (API REST `/api/v1/`) |
-| Base de données | Azure Cosmos DB (API MongoDB) via Mongoose |
-| Cache / Lock | Upstash Redis |
-| Auth | Hybride (Local JWT + Firebase OAuth Google/GitHub) |
-| Paiement | Stripe (sandbox) |
-| Stockage | Azure Blob Storage (PDFs billets) |
-| Déploiement | Azure Static Web Apps (front) + Azure Container Apps (back) |
-| Monitoring | Azure Application Insights |
-| CI/CD | GitHub Actions |
+### 1. Prérequis
+Assurez-vous d'avoir installé :
+* **Node.js** (version 20+)
+* Un cluster **MongoDB Atlas**
+* Une instance **Render Redis**
 
----
-
-## Structure
-
-```
-fifa-ticketing/
-├── CLAUDE.md            # Constitution agent (lecture obligatoire)
-├── README.md
-├── .env.example
-├── .cursorrules
-├── .github/workflows/   # Pipelines CI/CD
-├── agent/               # Contexte agent (tâches, contrats, modèles)
-├── docs/                # Livrables TP — NE PAS MODIFIER
-├── frontend/            # SPA React + Vite
-└── backend/             # API Express + Mongoose
-```
-
----
-
-## Démarrage rapide
-
-### Prérequis
-- Node.js 20+
-- Docker (optionnel, pour build container)
-- Compte Azure (Cosmos DB, Blob Storage, App Insights)
-- Compte Upstash Redis
-- Compte Stripe (clés `sk_test_...`)
-
-### Installation
+### 2. Clonage et Installation
 
 ```bash
-# Backend
+# Pour le Backend
 cd backend
 npm install
-cp ../.env.example .env   # puis remplir les variables
-npm run dev               # http://localhost:3000
 
-# Frontend (autre terminal)
-cd frontend
+# Pour le Frontend
+cd ../frontend
 npm install
-npm run dev               # http://localhost:5173
 ```
 
-### Tests
-
+## 🧪 Lancement des Tests
+Le seuil de couverture de code imposé par la gouvernance ALM est de > 70% sur l'ensemble des modules critiques.
 ```bash
-# Backend
-cd backend && npm test
+# Pour le Backend
+cd backend
+npm test
 
-# Frontend
-cd frontend && npm test
+# Pour le Frontend
+cd frontend
+npm test
 ```
 
+## 📌 Conventions d'Équipe
+
+Afin de garantir la maintenabilité du code et la rigueur du cycle de vie du logiciel (ALM), l'équipe applique les standards suivants :
+
+* **Messages de Commit :** Respect strict de la spécification **Conventional Commits**.
+    * *Exemples :* `feat(auth): ...`, `fix(cart): ...`
+* **Gestion des Branches :** Isolation rigoureuse des environnements :
+    * `main` : Production uniquement.
+    * `develop` : Branche d'intégration.
+    * `feature/*` : Développement de nouvelles fonctionnalités.
+    * `hotfix/*` : Correctifs urgents en production.
+* **Gestion des Sessions :** Sécurisation maximale de l'authentification.
+    * Le jeton de rafraîchissement (`refreshToken`) est stocké exclusivement dans un cookie **httpOnly**.
+    * Le jeton d'accès (JWT) est maintenu uniquement **en mémoire** côté client.
+    * 🚫 *Interdiction stricte d'utiliser le `localStorage` pour les données de session*.
+* **Architecture :** Séparation stricte des responsabilités. [cite_start]La logique métier est localisée **uniquement côté backend** (dans la couche services)[cite: 2]. [cite_start]Les composants React ne gèrent que l'affichage et l'état de l'interface utilisateur[cite: 2].
+
 ---
 
-## Conventions
+## 📖 Documentation Détaillée
 
-- **Commits** : Conventional Commits (`feat(scope): ...`, `fix(scope): ...`)
-- **Branches** : `main` (prod), `develop` (intégration), `feature/*`, `hotfix/*`
-- **Session** : stockée en cookie `httpOnly` uniquement (gérée via cookie `refreshToken` et JWT d'accès en mémoire, jamais dans `localStorage`)
-- **Logique métier** : strictement côté backend (services), jamais dans React
+Toutes les spécifications, modèles et architectures du projet sont répertoriés au sein du dossier `/agent` :
 
----
-
-## Documentation détaillée
-
-- [`CLAUDE.md`](./CLAUDE.md) — Constitution du projet
-- [`agent/architecture.md`](./agent/architecture.md) — Architecture détaillée
-- [`agent/api-contracts.md`](./agent/api-contracts.md) — Contrats API
-- [`agent/data-models.md`](./agent/data-models.md) — Schémas Mongoose
-- [`agent/design-system.md`](./agent/design-system.md) — Design system
-- [`agent/tasks-sprint1.md`](./agent/tasks-sprint1.md) — Sprint 1
-- [`agent/tasks-sprint2.md`](./agent/tasks-sprint2.md) — Sprint 2
-- [`agent/tasks-sprint3.md`](./agent/tasks-sprint3.md) — Sprint 3
+| Document | Rôle & Contenu |
+| :--- | :--- |
+| 📜 **`CLAUDE.md`** | **Constitution de l'agent** — Règles d'ingénierie, stack et contraintes immuables du projet. |
+| 🏗️ `agent/architecture.md` | **Architecture globale** — Conception modulaire de l'API et cinématiques de communication. |
+| 🔌 `agent/api-contracts.md` | [cite_start]**Contrats d'API** — Spécifications complètes des endpoints sous `/api/v1/`[cite: 2, 4]. |
+| 🗃️ `agent/data-models.md` | **Modèles de Données** — Schémas d'objets Mongoose pour MongoDB Atlas. |
+| 🎨 `agent/design-system.md` | [cite_start]**Charte Graphique** — Jetons CSS (Dark/Light tokens) et configuration Tailwind[cite: 6]. |
+| 📅 `agent/tasks-sprint1.md` | **Sprint 1** — Initialisation, authentification locale et catalogue. |
+| 📅 `agent/tasks-sprint2.md` | **Sprint 2** — Gestion des paniers, verrous Redis et tunnel Stripe. |
+| 📅 `agent/tasks-sprint3.md` | **Sprint 3** — Génération des billets PDF, QR Codes et espace Admin. |
