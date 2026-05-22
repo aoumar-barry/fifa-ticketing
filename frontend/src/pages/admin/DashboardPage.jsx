@@ -67,7 +67,7 @@ export default function DashboardPage() {
           <p className="text-text-secondary mb-6 text-sm">{error}</p>
           <button
             onClick={loadStats}
-            className="w-full bg-brand-gold hover:bg-brand-gold-dark text-bg-primary font-bold py-2.5 px-4 rounded transition-colors duration-200"
+            className="w-full bg-brand-gold hover:bg-brand-gold-dark text-black font-bold py-2.5 px-4 rounded transition-colors duration-200"
           >
             Réessayer
           </button>
@@ -134,11 +134,11 @@ export default function DashboardPage() {
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="inline-flex items-center justify-center gap-2 bg-brand-gold hover:bg-brand-gold-dark disabled:bg-brand-gold/50 text-bg-primary font-semibold text-sm px-4 py-2.5 rounded-md transition-all duration-200"
+            className="inline-flex items-center justify-center gap-2 bg-brand-gold hover:bg-brand-gold-dark disabled:bg-brand-gold/50 text-black font-semibold text-sm px-4 py-2.5 rounded-md transition-all duration-200"
           >
             {isExporting ? (
               <>
-                <span className="w-4 h-4 border-2 border-bg-primary border-t-transparent rounded-full animate-spin"></span>
+                <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
                 <span>Exportation...</span>
               </>
             ) : (
@@ -171,7 +171,7 @@ export default function DashboardPage() {
             <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-brand-gold/20 via-brand-gold to-brand-gold/20 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
             <div>
               <span className="text-xs font-mono uppercase tracking-widest text-text-muted">Billets Vendus</span>
-              <h2 className="text-3xl font-bold mt-2 font-mono tracking-tight text-white">
+              <h2 className="text-3xl font-bold mt-2 font-mono tracking-tight text-text-primary">
                 {ticketsSold}
               </h2>
             </div>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
             <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-brand-gold/20 via-brand-gold to-brand-gold/20 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
             <div>
               <span className="text-xs font-mono uppercase tracking-widest text-text-muted">Matchs Actifs</span>
-              <h2 className="text-3xl font-bold mt-2 font-mono tracking-tight text-white">
+              <h2 className="text-3xl font-bold mt-2 font-mono tracking-tight text-text-primary">
                 {activeMatchesCount}
               </h2>
             </div>
@@ -314,7 +314,7 @@ export default function DashboardPage() {
                       transform: 'translate(-50%, -100%)',
                     }}
                   >
-                    <p className="font-bold text-white mb-0.5">
+                    <p className="font-bold text-text-primary mb-0.5">
                       {hoveredBar.match.teamA} vs {hoveredBar.match.teamB}
                     </p>
                     <p className="text-brand-gold font-semibold font-mono">

@@ -107,7 +107,7 @@ export default function CataloguePage() {
             )}
             <button
               onClick={() => navigate('/profile')}
-              className="px-4 py-1.5 bg-brand-gold text-bg-primary hover:bg-brand-gold-light rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95"
+              className="px-4 py-1.5 bg-brand-gold text-black hover:bg-brand-gold-light rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95"
             >
               Mon Profil
             </button>

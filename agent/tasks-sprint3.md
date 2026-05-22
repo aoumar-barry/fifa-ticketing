@@ -258,7 +258,7 @@ chore(ci): extend pipeline with Azure Container Apps canary deployment strategy
 ---
 
 ## TASK-032 — Dependabot
-**Status:** TODO
+**Status:** DONE
 **Priorité:** MOYENNE — module 7
 **Dépend de:** TASK-001
 
@@ -295,7 +295,7 @@ perf(api): add node-cache, pagination and Mongoose indexes for catalogue perform
 ---
 
 ## TASK-034 — README.md complet
-**Status:** TODO
+**Status:** DONE
 **Priorité:** HAUTE — module 4
 **Dépend de:** toutes les tasks
 
