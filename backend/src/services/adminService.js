@@ -152,10 +152,108 @@ async function getAllStadiums() {
   return Stadium.find({}).sort({ name: 1 });
 }
 
+/**
+ * Calculate match statistics and global revenue metrics.
+ */
+async function getSalesStats() {
+  const matches = await Match.find({}).populate('stadiumId');
+  const tickets = await Ticket.find({ status: { $in: ['valid', 'used'] } }).populate('seatId');
+
+  const activeMatchesCount = matches.filter(m => m.isActive).length;
+
+  let totalRevenue = 0;
+  const ticketsSold = tickets.length;
+
+  const matchTicketsMap = {};
+  for (const match of matches) {
+    matchTicketsMap[match._id.toString()] = [];
+  }
+
+  for (const ticket of tickets) {
+    if (ticket.seatId && ticket.seatId.price) {
+      totalRevenue += ticket.seatId.price;
+    }
+    const matchIdStr = ticket.matchId.toString();
+    if (!matchTicketsMap[matchIdStr]) {
+      matchTicketsMap[matchIdStr] = [];
+    }
+    matchTicketsMap[matchIdStr].push(ticket);
+  }
+
+  const matchStats = matches.map(match => {
+    const matchTickets = matchTicketsMap[match._id.toString()] || [];
+    const matchTicketsSold = matchTickets.length;
+    const matchRevenue = matchTickets.reduce((sum, t) => sum + (t.seatId ? t.seatId.price : 0), 0);
+    const totalSeats = match.totalSeats || 0;
+    const occupancyRate = totalSeats > 0 ? (matchTicketsSold / totalSeats) : 0;
+
+    return {
+      match: {
+        id: match._id,
+        teamA: match.teamA,
+        teamB: match.teamB,
+        round: match.round,
+        group: match.group,
+        date: match.date,
+        stadium: match.stadiumId ? {
+          id: match.stadiumId._id,
+          name: match.stadiumId.name,
+          city: match.stadiumId.city,
+          country: match.stadiumId.country,
+        } : null,
+      },
+      ticketsSold: matchTicketsSold,
+      revenue: matchRevenue,
+      occupancyRate: occupancyRate,
+    };
+  });
+
+  return {
+    totalRevenue,
+    ticketsSold,
+    activeMatchesCount,
+    matchStats,
+  };
+}
+
+/**
+ * Retrieve flat export data for sales.
+ */
+async function getExportData() {
+  const tickets = await Ticket.find({ status: { $in: ['valid', 'used'] } })
+    .populate('userId')
+    .populate('seatId')
+    .populate({
+      path: 'matchId',
+      populate: {
+        path: 'stadiumId'
+      }
+    });
+
+  return tickets.map(ticket => {
+    return {
+      orderId: ticket.orderId ? ticket.orderId.toString() : '',
+      ticketId: ticket._id ? ticket._id.toString() : '',
+      buyerEmail: ticket.userId ? ticket.userId.email : '',
+      matchTeams: ticket.matchId ? `${ticket.matchId.teamA} vs ${ticket.matchId.teamB}` : '',
+      matchDate: ticket.matchId ? ticket.matchId.date.toISOString() : '',
+      stadium: ticket.matchId && ticket.matchId.stadiumId ? ticket.matchId.stadiumId.name : '',
+      section: ticket.seatId ? ticket.seatId.section : '',
+      row: ticket.seatId ? ticket.seatId.row : '',
+      seatNumber: ticket.seatId ? ticket.seatId.number : '',
+      category: ticket.seatId ? ticket.seatId.category : '',
+      price: ticket.seatId ? ticket.seatId.price : 0,
+    };
+  });
+}
+
 module.exports = {
   getAllMatches,
   createMatch,
   updateMatch,
   deactivateMatch,
   getAllStadiums,
+  getSalesStats,
+  getExportData,
 };
+

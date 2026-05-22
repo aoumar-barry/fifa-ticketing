@@ -103,10 +103,85 @@ async function getAllStadiums(req, res, next) {
   }
 }
 
+/**
+ * GET /api/v1/admin/stats
+ */
+async function getSalesStats(req, res, next) {
+  try {
+    const stats = await adminService.getSalesStats();
+    res.json(stats);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/v1/admin/export
+ */
+async function exportSalesCSV(req, res, next) {
+  try {
+    const data = await adminService.getExportData();
+    
+    // Build CSV natively
+    const headers = [
+      'Order ID',
+      'Ticket ID',
+      'Buyer Email',
+      'Match',
+      'Date',
+      'Stadium',
+      'Section',
+      'Row',
+      'Seat Number',
+      'Category',
+      'Price'
+    ];
+
+    const escapeField = (val) => {
+      if (val === null || val === undefined) {
+        return '';
+      }
+      let stringVal = String(val);
+      if (stringVal.includes('"') || stringVal.includes(',') || stringVal.includes('\n') || stringVal.includes('\r')) {
+        stringVal = `"${stringVal.replace(/"/g, '""')}"`;
+      }
+      return stringVal;
+    };
+
+    const headerLine = headers.join(',');
+    const rowLines = data.map(item => {
+      return [
+        escapeField(item.orderId),
+        escapeField(item.ticketId),
+        escapeField(item.buyerEmail),
+        escapeField(item.matchTeams),
+        escapeField(item.matchDate),
+        escapeField(item.stadium),
+        escapeField(item.section),
+        escapeField(item.row),
+        escapeField(item.seatNumber),
+        escapeField(item.category),
+        escapeField(item.price),
+      ].join(',');
+    });
+
+    const csvContent = [headerLine, ...rowLines].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="sales-export.csv"');
+    res.status(200).send(csvContent);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getAllMatches,
   createMatch,
   updateMatch,
   deactivateMatch,
   getAllStadiums,
+  getSalesStats,
+  exportSalesCSV,
 };
+

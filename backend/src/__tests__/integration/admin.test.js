@@ -378,4 +378,118 @@ describe('Admin CRUD Matches integration tests', () => {
         .expect(403);
     });
   });
+
+  describe('Sales Stats and CSV Export operations', () => {
+    let match1;
+    let match2;
+    let seat1;
+    let seat2;
+
+    beforeEach(async () => {
+      // Create two matches
+      match1 = await Match.create({
+        teamA: 'USA',
+        teamB: 'Germany',
+        round: 'group',
+        date: new Date('2026-06-12T20:00:00Z'),
+        stadiumId: stadium1._id,
+        totalSeats: 10,
+        availableSeats: 9,
+        isActive: true,
+      });
+
+      match2 = await Match.create({
+        teamA: 'France',
+        teamB: 'Japan',
+        round: 'group',
+        date: new Date('2026-06-17T20:00:00Z'),
+        stadiumId: stadium2._id,
+        totalSeats: 5,
+        availableSeats: 4,
+        isActive: true,
+      });
+
+      // Get seats
+      seat1 = await Seat.findOne({ stadiumId: stadium1._id }); // Section A1, Row A, Number 1, price 150
+      seat2 = await Seat.findOne({ stadiumId: stadium2._id }); // Section A1, Row A, Number 1, price 150
+
+      // Create tickets
+      await Ticket.create([
+        {
+          orderId: new mongoose.Types.ObjectId(),
+          matchId: match1._id,
+          seatId: seat1._id,
+          userId: regularUser._id,
+          qrCode: 'qr-1',
+          status: 'valid',
+        },
+        {
+          orderId: new mongoose.Types.ObjectId(),
+          matchId: match2._id,
+          seatId: seat2._id,
+          userId: regularUser._id,
+          qrCode: 'qr-2',
+          status: 'valid',
+        },
+        {
+          orderId: new mongoose.Types.ObjectId(),
+          matchId: match1._id,
+          seatId: seat1._id,
+          userId: regularUser._id,
+          qrCode: 'qr-3',
+          status: 'cancelled', // Should not be counted in active stats
+        }
+      ]);
+    });
+
+    it('should calculate sales stats correctly for admin', async () => {
+      const res = await request(app)
+        .get('/api/v1/admin/stats')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.ticketsSold).toBe(2); // Only valid/used ones
+      expect(res.body.totalRevenue).toBe(300); // 150 + 150
+      expect(res.body.activeMatchesCount).toBe(2); // match1 and match2 are both active
+      
+      const statsMatch1 = res.body.matchStats.find(s => s.match.id === match1._id.toString());
+      expect(statsMatch1).toBeDefined();
+      expect(statsMatch1.ticketsSold).toBe(1);
+      expect(statsMatch1.revenue).toBe(150);
+      expect(statsMatch1.occupancyRate).toBe(0.1); // 1 / 10
+    });
+
+    it('should generate CSV export correctly for admin', async () => {
+      const res = await request(app)
+        .get('/api/v1/admin/export')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.headers['content-type']).toContain('text/csv');
+      expect(res.headers['content-disposition']).toContain('attachment; filename="sales-export.csv"');
+      
+      const csvLines = res.text.trim().split('\n');
+      expect(csvLines[0]).toBe('Order ID,Ticket ID,Buyer Email,Match,Date,Stadium,Section,Row,Seat Number,Category,Price');
+      expect(csvLines.length).toBe(3); // Header + 2 data rows
+      
+      // Check data row contents
+      const userEmail = regularUser.email;
+      expect(csvLines[1]).toContain(userEmail);
+      expect(csvLines[1]).toContain('USA vs Germany');
+      expect(csvLines[1]).toContain('150');
+    });
+
+    it('should block regular users from accessing stats and export', async () => {
+      await request(app)
+        .get('/api/v1/admin/stats')
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(403);
+
+      await request(app)
+        .get('/api/v1/admin/export')
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(403);
+    });
+  });
 });
+

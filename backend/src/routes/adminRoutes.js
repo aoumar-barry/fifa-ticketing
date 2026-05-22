@@ -14,5 +14,7 @@ router.post('/matches', adminController.createMatch);
 router.put('/matches/:id', adminController.updateMatch);
 router.delete('/matches/:id', adminController.deactivateMatch);
 router.get('/stadiums', adminController.getAllStadiums);
+router.get('/stats', adminController.getSalesStats);
+router.get('/export', adminController.exportSalesCSV);
 
 module.exports = router;

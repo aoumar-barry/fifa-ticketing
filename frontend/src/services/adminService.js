@@ -101,3 +101,35 @@ export async function fetchAdminStadiums() {
   });
   return handleResponse(res);
 }
+
+export async function fetchAdminStats() {
+  const res = await fetch(`${API_BASE_URL}/stats`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
+export async function exportAdminSalesCSV() {
+  const token = useAuthStore.getState().accessToken;
+  const res = await fetch(`${API_BASE_URL}/export`, {
+    method: 'GET',
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) {
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await res.json();
+      throw new AdminApiError(
+        res.status,
+        data?.error?.message || data?.message || 'CSV export failed',
+        data?.error?.code || data?.code || 'UNKNOWN_ERROR'
+      );
+    }
+    throw new AdminApiError(res.status, 'CSV export failed', 'UNKNOWN_ERROR');
+  }
+  return res.blob();
+}
+
