@@ -135,19 +135,19 @@ jobs:
       - name: Deploy to Production (main)
         if: github.ref == 'refs/heads/main'
         env:
-          BACKEND_HOOK: ${{ secrets.RENDER_MAIN_BACKEND_HOOK }}
-          FRONTEND_HOOK: ${{ secrets.RENDER_MAIN_FRONTEND_HOOK }}
+          BACKEND_HOOK: ${{ secrets.RENDER_PRODUCTION_BACKEND_HOOK }}
+          FRONTEND_HOOK: ${{ secrets.RENDER_PRODUCTION_FRONTEND_HOOK }}
         run: |
           echo "Triggering production deployment on Render..."
           if [ -n "$BACKEND_HOOK" ]; then
             curl -f -X POST "$BACKEND_HOOK"
           else
-            echo "RENDER_MAIN_BACKEND_HOOK is not set."
+            echo "RENDER_PRODUCTION_BACKEND_HOOK is not set."
           fi
           if [ -n "$FRONTEND_HOOK" ]; then
             curl -f -X POST "$FRONTEND_HOOK"
           else
-            echo "RENDER_MAIN_FRONTEND_HOOK is not set."
+            echo "RENDER_PRODUCTION_FRONTEND_HOOK is not set."
           fi
 
 
