@@ -91,9 +91,22 @@ async function deactivateMatch(req, res, next) {
   }
 }
 
+/**
+ * GET /api/v1/admin/stadiums
+ */
+async function getAllStadiums(req, res, next) {
+  try {
+    const stadiums = await adminService.getAllStadiums();
+    res.json(stadiums);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getAllMatches,
   createMatch,
   updateMatch,
   deactivateMatch,
+  getAllStadiums,
 };

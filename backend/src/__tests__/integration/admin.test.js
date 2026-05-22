@@ -358,4 +358,24 @@ describe('Admin CRUD Matches integration tests', () => {
       expect(dbMatch.isActive).toBe(false);
     });
   });
+
+  describe('GET /api/v1/admin/stadiums', () => {
+    it('should list all stadiums for admin', async () => {
+      const res = await request(app)
+        .get('/api/v1/admin/stadiums')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveLength(2);
+      expect(res.body[0].name).toBe('Gillette Stadium'); // sorted alphabetically by name
+      expect(res.body[1].name).toBe('Mercedes-Benz Stadium');
+    });
+
+    it('should block non-admins from listing stadiums', async () => {
+      await request(app)
+        .get('/api/v1/admin/stadiums')
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(403);
+    });
+  });
 });

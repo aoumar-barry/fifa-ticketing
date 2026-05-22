@@ -13,5 +13,6 @@ router.get('/matches', adminController.getAllMatches);
 router.post('/matches', adminController.createMatch);
 router.put('/matches/:id', adminController.updateMatch);
 router.delete('/matches/:id', adminController.deactivateMatch);
+router.get('/stadiums', adminController.getAllStadiums);
 
 module.exports = router;

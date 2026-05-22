@@ -145,9 +145,17 @@ async function deactivateMatch(id) {
   return formatMatch(match);
 }
 
+/**
+ * Retrieve all stadiums.
+ */
+async function getAllStadiums() {
+  return Stadium.find({}).sort({ name: 1 });
+}
+
 module.exports = {
   getAllMatches,
   createMatch,
   updateMatch,
   deactivateMatch,
+  getAllStadiums,
 };
