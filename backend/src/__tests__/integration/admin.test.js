@@ -410,8 +410,8 @@ describe('Admin CRUD Matches integration tests', () => {
       });
 
       // Get seats
-      seat1 = await Seat.findOne({ stadiumId: stadium1._id }); // Section A1, Row A, Number 1, price 150
-      seat2 = await Seat.findOne({ stadiumId: stadium2._id }); // Section A1, Row A, Number 1, price 150
+      seat1 = await Seat.findOne({ stadiumId: stadium1._id, category: 'A' }); // Section A1, Row A, Number 1, price 150
+      seat2 = await Seat.findOne({ stadiumId: stadium2._id, category: 'A' }); // Section A1, Row A, Number 1, price 150
 
       // Create tickets
       await Ticket.create([

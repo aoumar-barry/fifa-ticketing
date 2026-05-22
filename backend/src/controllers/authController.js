@@ -112,7 +112,9 @@ async function loginFirebase(req, res, next) {
       accessToken,
     });
   } catch (err) {
-    console.error('[authController.loginFirebase Error]:', err);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('[authController.loginFirebase Error]:', err);
+    }
     next(err);
   }
 }
