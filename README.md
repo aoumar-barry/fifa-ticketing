@@ -1,6 +1,6 @@
 # FIFA Ticketing Hub 2026
 
-Plateforme web de billetterie pour la Coupe du Monde FIFA 2026 — Projet Master 2 ALM (ESN AST).
+FIFA Ticketing Hub 2026 est une plateforme web moderne et sécurisée de billetterie en ligne conçue pour la Coupe du Monde de la FIFA 2026. Ce projet s'inscrit dans le cadre du module ALM du Master 2 ALM (ESN AST).
 
 ---
 

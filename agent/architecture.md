@@ -13,26 +13,26 @@
 └────────────────────────┬───────────────────────────────────────┘
                          │ HTTPS
                 ┌────────▼────────┐
-                │ Azure Static    │   React + Vite SPA
-                │ Web Apps (CDN)  │   Dark mode by default
+                │ Render Static   │   React + Vite SPA
+                │ Site (CDN)      │   Dark mode by default
                 └────────┬────────┘
                          │ /api/v1/* (fetch, cookies httpOnly)
                 ┌────────▼────────┐
-                │ Azure Container │   Node.js + Express monolithe modulaire
-                │ Apps            │   EventEmitter interne
+                │ Render Web      │   Node.js + Express monolithe modulaire
+                │ Service (Back)  │   EventEmitter interne
                 └───┬────┬────┬───┘
                     │    │    │
         ┌───────────┘    │    └─────────────┐
         │                │                  │
 ┌───────▼──────┐  ┌──────▼──────┐   ┌───────▼──────────┐
-│ Cosmos DB    │  │ Upstash     │   │ Azure Blob       │
-│ (Mongo API)  │  │ Redis       │   │ Storage (PDFs)   │
+│ MongoDB      │  │ Upstash     │   │ Render Disk      │
+│ Atlas        │  │ Redis       │   │ Local (PDFs)     │
 │ TTL carts    │  │ Seat locks  │   │                  │
 └──────────────┘  └─────────────┘   └──────────────────┘
 
         Stripe (sandbox)  ─── webhook ──▶  Backend
         Nodemailer (SMTP) ◀── email  ───  Backend
-        App Insights      ◀── logs   ───  Backend + Front
+        Render Logs       ◀── logs   ───  Backend + Front
 ```
 
 ---
@@ -45,8 +45,8 @@
 | REST versionnée `/api/v1/` | Évolutivité contractuelle, compat client mobile future |
 | Event-Driven interne (EventEmitter) | Découplage notifications sans broker externe |
 | Séparation front/back stricte | Pas de logique métier dans React |
-| Containerisation backend | Portabilité, reproductibilité, Azure Container Apps |
-| TTL Cosmos pour les paniers | Pas de cron, pas de `setTimeout` Node |
+| Containerisation backend | Portabilité, reproductibilité, Render Web Service |
+| TTL MongoDB Atlas pour les paniers | Pas de cron, pas de `setTimeout` Node |
 | Lock Redis pour les sièges | Atomicité multi-instance via `SET NX EX` |
 
 ---
@@ -117,10 +117,9 @@ src/
 
 ## 7. Observabilité
 
-- Logs structurés JSON (pino) envoyés vers App Insights via SDK
-- Tracing automatique `applicationinsights` Node SDK
-- Métriques custom : `cart.created`, `payment.succeeded`, `ticket.generated`
-- Front : `@microsoft/applicationinsights-web` pour erreurs JS et perf
+- Logs structurés JSON (pino) consultables sur la console Render
+- Métriques de performance intégrées dans le tableau de bord Render et Upstash Redis
+- Métriques applicatives suivies via les logs structurés
 
 ---
 
@@ -143,6 +142,6 @@ src/
 push/pr → install → lint → test → build
                                     ↓
                          (main only) deploy
-                                    ├── frontend → Azure Static Web Apps
-                                    └── backend  → Azure Container Apps
+                                    ├── frontend → Render Static Site
+                                    └── backend  → Render Web Service
 ```

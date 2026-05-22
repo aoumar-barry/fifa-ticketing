@@ -292,7 +292,8 @@ describe('Ticket model', () => {
   });
 
   it('rejects missing qrCode', async () => {
-    const { qrCode: _ignored, ...rest } = validTicket();
+    const rest = { ...validTicket() };
+    delete rest.qrCode;
     await expect(Ticket.create(rest)).rejects.toThrow();
   });
 });

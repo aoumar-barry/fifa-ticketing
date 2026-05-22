@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { fetchOrders, fetchOrder } from '../services/orderService';
 import { downloadPDF } from '../services/ticketService';
+import ThemeToggle from '../components/ThemeToggle';
 
 function formatMatchDate(dateString) {
   try {
@@ -248,6 +249,15 @@ export default function OrderHistoryPage() {
               <span className="text-text-muted">Connecté</span>
               <span className="text-text-secondary font-medium">{user?.email}</span>
             </div>
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin/dashboard"
+                className="px-4 py-1.5 bg-brand-gold/10 hover:bg-brand-gold/20 border border-brand-gold/30 text-brand-gold rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95 inline-block text-center"
+              >
+                Portail Admin
+              </Link>
+            )}
+            <ThemeToggle />
             <button
               onClick={logout}
               className="px-4 py-1.5 bg-bg-tertiary hover:bg-bg-elevated border border-border-light rounded-full text-xs font-semibold transition-all"

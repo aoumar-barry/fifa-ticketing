@@ -2,9 +2,9 @@
 
 > Référence : `CLAUDE.md` section 5.
 > Tous les schémas Mongoose ci-dessous sont la source de vérité.
-> Cosmos DB API MongoDB est compatible Mongoose, à condition de respecter les limites :
-> - clé de partition à définir explicitement par collection
-> - éviter les transactions multi-collections (non supportées sur les niveaux gratuits)
+> MongoDB Atlas héberge notre base de données Mongoose. L'utilisation d'index standard et des options Mongoose permet de garantir les performances :
+> - Les index appropriés doivent être créés sur les champs fréquemment recherchés (par ex. email, matchId, date).
+> - Les verrous courts et l'expiration des paniers s'appuient sur des index TTL.
 
 ---
 
@@ -79,7 +79,7 @@ Index composé : `{ stadiumId: 1, section: 1, row: 1, number: 1 }` unique.
 
 ---
 
-## 5. Cart (TTL Cosmos)
+## 5. Cart (TTL Index MongoDB)
 
 ```javascript
 {
@@ -164,15 +164,15 @@ Stadium 1 ─ N Seat
 
 ---
 
-## 10. Clés de partition Cosmos DB (recommandation)
+## 10. Index Recommandés
 
-| Collection | Partition Key |
+| Collection | Index |
 |---|---|
-| users      | `/email` |
-| stadiums   | `/city` |
-| matches    | `/round` (ou `/date` si volume) |
-| seats      | `/stadiumId` |
-| carts      | `/userId` |
-| orders     | `/userId` |
-| tickets    | `/userId` |
-| payments   | `/orderId` |
+| users      | `{ email: 1 }` (unique), `{ firebaseUid: 1 }` (unique, sparse) |
+| stadiums   | `{ city: 1 }` |
+| matches    | `{ date: 1 }`, `{ stadiumId: 1 }` |
+| seats      | `{ stadiumId: 1, section: 1, row: 1, number: 1 }` (unique) |
+| carts      | `{ userId: 1 }`, `{ expiresAt: 1 }` (TTL) |
+| orders     | `{ userId: 1, createdAt: -1 }` |
+| tickets    | `{ qrCode: 1 }` (unique), `{ userId: 1 }` |
+| payments   | `{ orderId: 1 }`, `{ transactionId: 1 }` |

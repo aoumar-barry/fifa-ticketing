@@ -1,11 +1,24 @@
 const Redis = require('ioredis');
+const { URL } = require('url');
 
 let client = null;
 
 function createRedisClient({ url, logger } = {}) {
   if (!url) {
-    throw new Error('UPSTASH_REDIS_URL is required to create a Redis client');
+    throw new Error('Redis URL is required to create a Redis client');
   }
+
+  let maskedUrl = url;
+  try {
+    const parsed = new URL(url);
+    if (parsed.password) {
+      parsed.password = '******';
+    }
+    maskedUrl = parsed.toString();
+  } catch {
+    maskedUrl = url;
+  }
+  logger?.info(`[redis] Initializing connection to: ${maskedUrl}`);
 
   const c = new Redis(url, {
     lazyConnect: false,

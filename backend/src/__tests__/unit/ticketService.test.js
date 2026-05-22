@@ -164,7 +164,7 @@ describe('Ticket Service Unit Tests', () => {
         return mockQrBase64;
       });
 
-      mockGenerateTicketPDF.mockImplementationOnce(async (t, qr, m, s) => {
+      mockGenerateTicketPDF.mockImplementationOnce(async (t) => {
         callSequence.push({ step: 'generateTicketPDF', ticketId: t._id.toString() });
         return mockPdfBuffer;
       });
@@ -175,7 +175,7 @@ describe('Ticket Service Unit Tests', () => {
       });
 
       mockSendTicketEmail.mockImplementationOnce(async (email, url, details) => {
-        callSequence.push({ step: 'sendTicketEmail', email, url });
+        callSequence.push({ step: 'sendTicketEmail', email, url, details });
       });
 
       mockUnlockSeat.mockImplementationOnce(async (seatId) => {
@@ -214,9 +214,20 @@ describe('Ticket Service Unit Tests', () => {
       expect(callSequence[3].step).toBe('sendTicketEmail');
       expect(callSequence[3].email).toBe(user.email);
       expect(callSequence[3].url).toBe(mockPdfUrl);
+      expect(callSequence[3].details).toBeDefined();
+      expect(callSequence[3].details.ticket._id.toString()).toBe(ticket._id.toString());
+      expect(callSequence[3].details.match._id.toString()).toBe(match._id.toString());
+      expect(callSequence[3].details.seat._id.toString()).toBe(seat._id.toString());
+      expect(callSequence[3].details.order._id.toString()).toBe(order._id.toString());
 
       expect(callSequence[4].step).toBe('unlockSeat');
       expect(callSequence[4].seatId).toBe(seat._id.toString());
+    });
+
+    it('should catch error if unlockSeat fails during ticket generation', async () => {
+      mockUnlockSeat.mockRejectedValueOnce(new Error('Redis failure'));
+      const cartItems = [{ matchId: match._id, seatId: seat._id, price: 250 }];
+      await expect(ticketService.createTicketsForOrder(order, cartItems)).resolves.not.toThrow();
     });
 
     it('should throw AppError if user does not exist', async () => {

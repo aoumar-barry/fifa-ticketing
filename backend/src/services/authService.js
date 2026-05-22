@@ -156,11 +156,9 @@ async function loginOrRegisterFirebase(idToken) {
 
         if (fullName) {
           const parts = fullName.trim().split(/\s+/);
-          if (parts.length > 0) {
-            firstName = parts[0];
-            lastName = parts.slice(1).join(' ') || 'User';
-          }
-        } else if (emailName) {
+          firstName = parts[0];
+          lastName = parts.slice(1).join(' ') || 'User';
+        } else {
           firstName = emailName;
         }
 
@@ -183,6 +181,9 @@ async function loginOrRegisterFirebase(idToken) {
       refreshToken: tokens.refreshToken,
     };
   } catch (err) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('[Firebase Auth Service Error]:', err);
+    }
     if (err instanceof AppError) throw err;
     throw new AppError(401, err.message || 'Invalid Firebase ID Token', 'UNAUTHORIZED');
   }

@@ -25,7 +25,13 @@ describe('config/env — loadEnv', () => {
     );
   });
 
-  it('accepts production when all required secrets are set', () => {
+  it('rejects preproduction without required secrets', () => {
+    expect(() => loadEnv({ NODE_ENV: 'preproduction' })).toThrow(
+      /Missing required env vars in preproduction/,
+    );
+  });
+
+  it('accepts production when UPSTASH_REDIS_URL is set', () => {
     const env = loadEnv({
       NODE_ENV: 'production',
       COSMOS_CONNECTION_STRING: 'mongodb://x',
@@ -39,5 +45,37 @@ describe('config/env — loadEnv', () => {
       STRIPE_WEBHOOK_SECRET: 'whsec_x',
     });
     expect(env.NODE_ENV).toBe('production');
+  });
+
+  it('accepts production when REDIS_URL is set', () => {
+    const env = loadEnv({
+      NODE_ENV: 'production',
+      COSMOS_CONNECTION_STRING: 'mongodb://x',
+      REDIS_URL: 'rediss://x',
+      JWT_ACCESS_SECRET: 'access',
+      JWT_REFRESH_SECRET: 'refresh',
+      FIREBASE_PROJECT_ID: 'x',
+      FIREBASE_CLIENT_EMAIL: 'y',
+      FIREBASE_PRIVATE_KEY: 'z',
+      STRIPE_SECRET_KEY: 'sk_test_x',
+      STRIPE_WEBHOOK_SECRET: 'whsec_x',
+    });
+    expect(env.NODE_ENV).toBe('production');
+  });
+
+  it('accepts preproduction when all required secrets are set', () => {
+    const env = loadEnv({
+      NODE_ENV: 'preproduction',
+      COSMOS_CONNECTION_STRING: 'mongodb://x',
+      UPSTASH_REDIS_URL: 'rediss://x',
+      JWT_ACCESS_SECRET: 'access',
+      JWT_REFRESH_SECRET: 'refresh',
+      FIREBASE_PROJECT_ID: 'x',
+      FIREBASE_CLIENT_EMAIL: 'y',
+      FIREBASE_PRIVATE_KEY: 'z',
+      STRIPE_SECRET_KEY: 'sk_test_x',
+      STRIPE_WEBHOOK_SECRET: 'whsec_x',
+    });
+    expect(env.NODE_ENV).toBe('preproduction');
   });
 });
