@@ -41,7 +41,7 @@ async function uploadPDF(buffer, filename) {
   fs.writeFileSync(filePath, buffer);
 
   const port = process.env.PORT || 3000;
-  let baseUrl = process.env.BACKEND_URL;
+  let baseUrl = process.env.VITE_API_URL || process.env.BACKEND_URL;
   if (!baseUrl) {
     if (process.env.NODE_ENV === 'production') {
       baseUrl = 'https://fifa-ticketing-backend.onrender.com';
