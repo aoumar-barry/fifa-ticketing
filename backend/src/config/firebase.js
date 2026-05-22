@@ -44,9 +44,9 @@ if (
       err,
     );
   }
-} else if (env.NODE_ENV === "production") {
+} else if (env.NODE_ENV === "production" || env.NODE_ENV === "preproduction") {
   console.error(
-    "[Firebase Config] Firebase Admin credentials are required in production environment.",
+    `[Firebase Config] Firebase Admin credentials are required in ${env.NODE_ENV} environment.`,
   );
 } else if (env.NODE_ENV !== "test") {
   // In development, we warn but do not throw
@@ -72,7 +72,7 @@ async function verifyFirebaseToken(idToken) {
   }
 
   // Development fallback: decode without verification
-  if (env.NODE_ENV !== 'production') {
+  if (env.NODE_ENV !== 'production' && env.NODE_ENV !== 'preproduction') {
     console.warn('[Firebase Config] Admin SDK not initialised — decoding token WITHOUT signature verification (dev only).');
     const payload = decodeTokenUnsafe(idToken);
     // Return a shape compatible with admin.auth().verifyIdToken()

@@ -1,7 +1,7 @@
 const pino = require('pino');
 
 function createLogger(env = process.env) {
-  const isProd = env.NODE_ENV === 'production';
+  const isProd = env.NODE_ENV === 'production' || env.NODE_ENV === 'preproduction';
   const isTest = env.NODE_ENV === 'test';
 
   return pino({
