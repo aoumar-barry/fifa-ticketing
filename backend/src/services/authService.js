@@ -183,6 +183,7 @@ async function loginOrRegisterFirebase(idToken) {
       refreshToken: tokens.refreshToken,
     };
   } catch (err) {
+    console.error('[Firebase Auth Service Error]:', err);
     if (err instanceof AppError) throw err;
     throw new AppError(401, err.message || 'Invalid Firebase ID Token', 'UNAUTHORIZED');
   }
