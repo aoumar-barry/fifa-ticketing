@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { useTheme } from './hooks/useTheme';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CataloguePage from './pages/CataloguePage';
@@ -49,6 +50,8 @@ function AdminRoute({ children }) {
 
 export default function App() {
   const { checkAuth, user, isLoading } = useAuthStore();
+  // Initialize theme from localStorage / prefers-color-scheme
+  useTheme();
 
   useEffect(() => {
     checkAuth();

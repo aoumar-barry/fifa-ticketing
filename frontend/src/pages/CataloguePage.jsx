@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { fetchMatches } from '../services/matchService';
 import MatchCard from '../components/MatchCard';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function CataloguePage() {
   const { user, logout } = useAuthStore();
@@ -102,6 +103,7 @@ export default function CataloguePage() {
             >
               Mon Profil
             </button>
+            <ThemeToggle />
             <button
               onClick={logout}
               className="px-4 py-1.5 bg-bg-tertiary hover:bg-bg-elevated border border-border-light rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95"

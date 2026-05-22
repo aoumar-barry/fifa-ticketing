@@ -5,6 +5,7 @@ import { useCartStore } from '../store/cartStore';
 import { fetchMatchById } from '../services/matchService';
 import { fetchSeats } from '../services/seatService';
 import SeatMap from '../components/SeatMap';
+import ThemeToggle from '../components/ThemeToggle';
 
 function formatMatchDate(dateString) {
   try {
@@ -162,6 +163,7 @@ export default function MatchDetailPage() {
           </div>
 
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             {isAuthenticated ? (
               <>
                 <div className="hidden sm:flex flex-col items-end text-xs">
