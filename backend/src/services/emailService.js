@@ -14,6 +14,7 @@ async function sendTicketEmail(to, pdfUrl, details) {
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
+  const fromEmail = process.env.SMTP_FROM || (user && user.includes('@') ? user : 'tickets@fifa2026.com');
 
   const ticket = details?.ticket;
   const match = details?.match || {};
@@ -51,7 +52,7 @@ async function sendTicketEmail(to, pdfUrl, details) {
     : (match.stadiumId?.city || match.stadiumId?.country || '');
 
   const mailOptions = {
-    from: `"FIFA World Cup 2026" <${user || 'tickets@fifa2026.com'}>`,
+    from: `"FIFA World Cup 2026" <${fromEmail}>`,
     to,
     subject: 'Vos Billets Officiels - FIFA World Cup 2026 🎟️',
     html: `
@@ -177,6 +178,9 @@ async function sendTicketEmail(to, pdfUrl, details) {
         port,
         secure: port === 465,
         auth: { user, pass },
+        tls: {
+          rejectUnauthorized: false,
+        },
       });
 
       await transporter.sendMail(mailOptions);

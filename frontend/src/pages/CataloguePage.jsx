@@ -97,6 +97,14 @@ export default function CataloguePage() {
               <span className="text-text-muted">Connecté en tant que</span>
               <span className="text-text-secondary font-medium">{user?.email}</span>
             </div>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => navigate('/admin/dashboard')}
+                className="px-4 py-1.5 bg-brand-gold/10 hover:bg-brand-gold/20 border border-brand-gold/30 text-brand-gold rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95"
+              >
+                Portail Admin
+              </button>
+            )}
             <button
               onClick={() => navigate('/profile')}
               className="px-4 py-1.5 bg-brand-gold text-bg-primary hover:bg-brand-gold-light rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95"

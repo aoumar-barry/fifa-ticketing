@@ -111,6 +111,14 @@ export default function ProfilePage() {
               <span className="text-text-muted">Connecté en tant que</span>
               <span className="text-text-secondary font-medium">{email || user?.email}</span>
             </div>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => navigate('/admin/dashboard')}
+                className="px-4 py-1.5 bg-brand-gold/10 hover:bg-brand-gold/20 border border-brand-gold/30 text-brand-gold rounded-full text-xs font-semibold tracking-wide transition-all duration-150 active:scale-95"
+              >
+                Portail Admin
+              </button>
+            )}
             <ThemeToggle />
             <button
               onClick={logout}

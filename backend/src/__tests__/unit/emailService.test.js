@@ -80,6 +80,9 @@ describe('Email Service Unit Tests', () => {
       port: 587,
       secure: false,
       auth: { user: 'smtp_user', pass: 'smtp_pass' },
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
 
     expect(sendMailMock).toHaveBeenCalled();
@@ -151,5 +154,38 @@ describe('Email Service Unit Tests', () => {
     await sendTicketEmail('buyer@example.com', 'https://blob.storage/ticket.pdf', mockDetails);
 
     expect(logger.error).toHaveBeenCalledWith({ err: error }, expect.stringContaining("Échec de l'envoi de l'email"));
+  });
+
+  it('should use SMTP_FROM if provided, or fallback to tickets@fifa2026.com if SMTP_USER is not an email', async () => {
+    process.env.SMTP_HOST = 'smtp.example.com';
+    process.env.SMTP_PORT = '587';
+    process.env.SMTP_USER = 'apikey';
+    process.env.SMTP_PASS = 'smtp_pass';
+    process.env.SMTP_FROM = 'noreply@fifa2026.com';
+
+    const sendMailMock = jest.fn().mockResolvedValue({ messageId: '123' });
+    nodemailer.createTransport.mockReturnValue({
+      sendMail: sendMailMock,
+    });
+
+    const mockDetails = {
+      ticket: { orderId: 'ticketOrderId123' },
+      match: { teamA: 'France', teamB: 'Brazil', date: new Date('2026-06-25T18:00:00Z') },
+      seat: { section: 'A', row: '10', number: 12, price: 150 },
+      order: { _id: 'orderId123', totalAmount: 150 }
+    };
+
+    await sendTicketEmail('buyer@example.com', 'https://blob.storage/ticket.pdf', mockDetails);
+
+    expect(sendMailMock).toHaveBeenCalled();
+    const mailOptions = sendMailMock.mock.calls[0][0];
+    expect(mailOptions.from).toBe('"FIFA World Cup 2026" <noreply@fifa2026.com>');
+
+    // Now test fallback to tickets@fifa2026.com when SMTP_FROM is not set and SMTP_USER is not an email
+    delete process.env.SMTP_FROM;
+    sendMailMock.mockClear();
+    await sendTicketEmail('buyer@example.com', 'https://blob.storage/ticket.pdf', mockDetails);
+    const mailOptionsFallback = sendMailMock.mock.calls[0][0];
+    expect(mailOptionsFallback.from).toBe('"FIFA World Cup 2026" <tickets@fifa2026.com>');
   });
 });
