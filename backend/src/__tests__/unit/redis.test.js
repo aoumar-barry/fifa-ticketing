@@ -28,7 +28,7 @@ describe('config/redis', () => {
   });
 
   it('throws if url is missing', () => {
-    expect(() => createRedisClient({})).toThrow(/UPSTASH_REDIS_URL is required/);
+    expect(() => createRedisClient({})).toThrow(/Redis URL is required/);
   });
 
   it('enables TLS when url uses rediss://', () => {

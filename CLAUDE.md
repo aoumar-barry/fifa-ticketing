@@ -462,7 +462,8 @@ hotfix/*    ← ex: hotfix/cart-redis-leak
 COSMOS_CONNECTION_STRING=
 COSMOS_DB_NAME=fifa-ticketing
 
-# Upstash Redis
+# Redis / Upstash Redis
+REDIS_URL=
 UPSTASH_REDIS_URL=
 UPSTASH_REDIS_TOKEN=
 

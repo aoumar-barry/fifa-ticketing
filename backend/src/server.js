@@ -24,13 +24,14 @@ async function bootstrap() {
     logger.warn('[bootstrap] COSMOS_CONNECTION_STRING missing — DB disabled (dev only)');
   }
 
-  if (env.UPSTASH_REDIS_URL) {
-    const redis = createRedisClient({ url: env.UPSTASH_REDIS_URL, logger });
+  const redisUrl = env.REDIS_URL || env.UPSTASH_REDIS_URL;
+  if (redisUrl) {
+    const redis = createRedisClient({ url: redisUrl, logger });
     setRedisClient(redis);
     const ok = await pingRedis(redis);
     logger.info({ pong: ok }, '[bootstrap] redis ping');
   } else {
-    logger.warn('[bootstrap] UPSTASH_REDIS_URL missing — Redis disabled (dev only)');
+    logger.warn('[bootstrap] Redis URL missing — Redis disabled (dev only)');
   }
 
   const app = createApp({ frontendUrl: env.FRONTEND_URL });

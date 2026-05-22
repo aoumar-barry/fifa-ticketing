@@ -8,6 +8,7 @@ const envSchema = z.object({
   COSMOS_CONNECTION_STRING: z.string().min(1).optional(),
   COSMOS_DB_NAME: z.string().min(1).default('fifa-ticketing'),
 
+  REDIS_URL: z.string().min(1).optional(),
   UPSTASH_REDIS_URL: z.string().min(1).optional(),
   UPSTASH_REDIS_TOKEN: z.string().min(1).optional(),
 
@@ -48,7 +49,6 @@ function loadEnv(raw = process.env) {
   if (env.NODE_ENV === 'production') {
     const required = [
       'COSMOS_CONNECTION_STRING',
-      'UPSTASH_REDIS_URL',
       'JWT_ACCESS_SECRET',
       'JWT_REFRESH_SECRET',
       'FIREBASE_PROJECT_ID',
@@ -58,6 +58,9 @@ function loadEnv(raw = process.env) {
       'STRIPE_WEBHOOK_SECRET',
     ];
     const missing = required.filter((k) => !env[k]);
+    if (!env.REDIS_URL && !env.UPSTASH_REDIS_URL) {
+      missing.push('REDIS_URL (or UPSTASH_REDIS_URL)');
+    }
     if (missing.length) {
       throw new Error(
         `Missing required env vars in production: ${missing.join(', ')}`,
