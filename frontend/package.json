@@ -14,7 +14,7 @@
     "@stripe/react-stripe-js": "^6.4.0",
     "@stripe/stripe-js": "^9.6.0",
     "firebase": "^12.14.0",
-    "react": "^18.3.1",
+    "react": "^19.2.6",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
     "zustand": "^5.0.14"
@@ -26,7 +26,7 @@
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
-    "@types/react": "^18.3.11",
+    "@types/react": "^19.2.15",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
